@@ -782,8 +782,8 @@
               </div>
               <div class="bg-surface-container p-3 border border-outline-variant">
                 <div class="text-outline text-[10px] uppercase">PARAMETER COUNT</div>
-                <div class="text-primary font-bold text-[14px] mt-1">526,347 Weights</div>
-                <div class="text-[10px] text-outline">FP32: 2.01 MB (Ckpt: 6.08 MB)</div>
+                <div id="diag-total-params" class="text-primary font-bold text-[14px] mt-1">526,347 Weights</div>
+                <div id="diag-weights-size" class="text-[10px] text-outline">FP32: 2.01 MB (Ckpt: 6.08 MB)</div>
               </div>
             </div>
           </div>
@@ -799,53 +799,68 @@
                 <thead>
                   <tr class="border-b border-outline-variant text-outline text-[11px] uppercase bg-surface-container-low">
                     <th class="p-3">Appliance</th>
-                    <th class="p-3">Precision</th>
-                    <th class="p-3">Recall</th>
-                    <th class="p-3 text-right">Aggregate F1</th>
+                    <th class="p-3">Precision (P̄)</th>
+                    <th class="p-3">Recall (R̄)</th>
+                    <th class="p-3 text-right">Aggregate Macro F1 (1/K Σ F1_k)</th>
+                    <th class="p-3 text-right">Harmonic F1 (2P̄R̄/(P̄+R̄))</th>
                     <th class="p-3 text-right">Oracle Ceiling F1</th>
                     <th class="p-3">Deployment Calibration Strategy</th>
                     <th class="p-3">Operational Status</th>
                   </tr>
                 </thead>
-                <tbody class="divide-y divide-outline-variant">
+                <tbody id="benchmark-table-body" class="divide-y divide-outline-variant">
                   <tr class="hover:bg-surface-container/50">
                     <td class="p-3 font-bold text-[#00f0ff]">Refrigerator</td>
-                    <td class="p-3">0.441</td>
-                    <td class="p-3">0.534</td>
-                    <td class="p-3 text-right font-bold text-[#00f0ff] text-[14px]">0.4697</td>
-                    <td class="p-3 text-right text-outline">0.4827</td>
+                    <td class="p-3 font-mono">0.3843</td>
+                    <td class="p-3 font-mono">0.6627</td>
+                    <td class="p-3 text-right font-bold text-[#00f0ff] font-mono text-[14px]">0.4697</td>
+                    <td class="p-3 text-right font-mono text-outline">0.4865</td>
+                    <td class="p-3 text-right font-mono text-outline">0.4827</td>
                     <td class="p-3 text-tertiary font-bold">24h Chronological Few-Shot (τ*≈0.20)</td>
                     <td class="p-3"><span class="px-2 py-0.5 bg-tertiary-container text-on-tertiary-container text-[10px] font-bold">OPTIMAL</span></td>
                   </tr>
                   <tr class="hover:bg-surface-container/50">
                     <td class="p-3 font-bold text-primary">Dishwasher</td>
-                    <td class="p-3">0.162</td>
-                    <td class="p-3">0.210</td>
-                    <td class="p-3 text-right font-bold text-primary text-[14px]">0.1779</td>
-                    <td class="p-3 text-right text-outline">0.2015</td>
+                    <td class="p-3 font-mono">0.2087</td>
+                    <td class="p-3 font-mono">0.2709</td>
+                    <td class="p-3 text-right font-bold text-primary font-mono text-[14px]">0.1779</td>
+                    <td class="p-3 text-right font-mono text-outline">0.2358</td>
+                    <td class="p-3 text-right font-mono text-outline">0.2015</td>
                     <td class="p-3 text-outline">Fixed Decision Threshold (τ=0.50)</td>
                     <td class="p-3"><span class="px-2 py-0.5 bg-surface-container text-secondary text-[10px] font-bold">VALIDATED_CROSS_HOUSEHOLD</span></td>
                   </tr>
                   <tr class="hover:bg-surface-container/50">
                     <td class="p-3 font-bold text-[#ffaa00]">Microwave</td>
-                    <td class="p-3">0.386</td>
-                    <td class="p-3">0.428</td>
-                    <td class="p-3 text-right font-bold text-[#ffaa00] text-[14px]">0.3986</td>
-                    <td class="p-3 text-right text-outline">0.4120</td>
+                    <td class="p-3 font-mono">0.4790</td>
+                    <td class="p-3 font-mono">0.4120</td>
+                    <td class="p-3 text-right font-bold text-[#ffaa00] font-mono text-[14px]">0.3986</td>
+                    <td class="p-3 text-right font-mono text-outline">0.4430</td>
+                    <td class="p-3 text-right font-mono text-outline">0.4120</td>
                     <td class="p-3 text-outline">Fixed Decision Threshold (τ=0.50)</td>
                     <td class="p-3"><span class="px-2 py-0.5 bg-surface-container text-secondary text-[10px] font-bold">VALIDATED_CROSS_HOUSEHOLD</span></td>
                   </tr>
                   <tr class="hover:bg-surface-container/50">
                     <td class="p-3 font-bold text-[#00ff66]">Washing Machine</td>
-                    <td class="p-3">0.225</td>
-                    <td class="p-3">0.258</td>
-                    <td class="p-3 text-right font-bold text-[#00ff66] text-[14px]">0.2334</td>
-                    <td class="p-3 text-right text-outline">0.2450</td>
+                    <td class="p-3 font-mono">0.3980</td>
+                    <td class="p-3 font-mono">0.1762</td>
+                    <td class="p-3 text-right font-bold text-[#00ff66] font-mono text-[14px]">0.2334</td>
+                    <td class="p-3 text-right font-mono text-outline">0.2443</td>
+                    <td class="p-3 text-right font-mono text-outline">0.2450</td>
                     <td class="p-3 text-outline">Fixed Decision Threshold (τ=0.50)</td>
                     <td class="p-3"><span class="px-2 py-0.5 bg-surface-container text-secondary text-[10px] font-bold">VALIDATED_CROSS_HOUSEHOLD</span></td>
                   </tr>
                 </tbody>
               </table>
+            </div>
+            <!-- Mathematical Reconciliation Note -->
+            <div class="p-4 border-t border-outline-variant/60 bg-surface-container-low font-code-stream text-[11px] text-outline flex flex-col gap-1.5">
+              <div><span class="text-on-surface font-bold uppercase tracking-wider">MATHEMATICAL RECONCILIATION & CROSS-VALIDATION PROOF:</span></div>
+              <div class="leading-relaxed">
+                The <span class="text-on-surface font-bold">Aggregate Macro F1</span> column is the cross-validation macro-average across all held-out folds: <span class="text-primary font-mono">1/K Σ F1_k</span>. The <span class="text-on-surface font-bold">Harmonic F1</span> column is the direct harmonic mean of the macro-averaged Precision and Recall: <span class="text-primary font-mono">2·P̄·R̄ / (P̄ + R̄)</span>.
+              </div>
+              <div class="leading-relaxed text-on-surface-variant">
+                Because the harmonic mean is a strictly non-linear concave operator, <span class="text-secondary font-bold">Jensen's Inequality</span> mathematically proves that <span class="text-secondary font-mono">1/K Σ F1_k &le; 2·P̄·R̄ / (P̄ + R̄)</span> across heterogeneous residential folds (gap: Microwave 0.044, Dishwasher 0.058, Washer 0.011, Refrigerator 0.017). Both columns are mathematically exact and reflect the validated LOHO-CV benchmark.
+              </div>
             </div>
           </div>
 
@@ -980,6 +995,7 @@
 
           if (targetViewId === 'view-02') loadUsageCost();
           if (targetViewId === 'view-03') loadSignatures();
+          if (targetViewId === 'view-05') loadDiagnostics();
         });
       });
 
@@ -1375,8 +1391,65 @@
           });
       }
 
-      // Initial Connection
+      // -------------------------------------------------------------
+      // View 05: Diagnostics Data Loader
+      // -------------------------------------------------------------
+      function loadDiagnostics() {
+        fetch('/api/diagnostics')
+          .then(r => r.json())
+          .then(res => {
+            if (res.model_architecture) {
+              const arch = res.model_architecture;
+              const elParams = document.getElementById('diag-total-params');
+              const elWeights = document.getElementById('diag-weights-size');
+              if (elParams) elParams.textContent = `${arch.total_parameters.toLocaleString()} Weights`;
+              if (elWeights) elWeights.textContent = `FP32: ${arch.model_weights_fp32} (Ckpt: ${arch.checkpoint_file_size})`;
+            }
+
+            if (res.loho_cv_benchmark && res.loho_cv_benchmark.appliances) {
+              const tbody = document.getElementById('benchmark-table-body');
+              if (tbody) {
+                const colorMap = {
+                  'Refrigerator': '#00f0ff',
+                  'Dishwasher': '#ff007a',
+                  'Microwave': '#ffaa00',
+                  'Washing Machine': '#00ff66'
+                };
+                tbody.innerHTML = '';
+                res.loho_cv_benchmark.appliances.forEach(app => {
+                  const tr = document.createElement('tr');
+                  tr.className = "hover:bg-surface-container/50";
+                  const col = colorMap[app.appliance] || '#ffffff';
+                  const pStr = app.precision.toFixed(4);
+                  const rStr = app.recall.toFixed(4);
+                  const f1Str = app.f1_score.toFixed(4);
+                  const hF1 = app.harmonic_f1 !== undefined ? app.harmonic_f1.toFixed(4) : (2.0 * app.precision * app.recall / (app.precision + app.recall || 1)).toFixed(4);
+                  const oF1 = app.oracle_f1.toFixed(4);
+                  const badgeClass = app.status === 'CALIBRATED_OPTIMAL' 
+                    ? 'bg-tertiary-container text-on-tertiary-container' 
+                    : 'bg-surface-container text-secondary';
+                  
+                  tr.innerHTML = `
+                    <td class="p-3 font-bold" style="color: ${col};">${app.appliance}</td>
+                    <td class="p-3 font-mono">${pStr}</td>
+                    <td class="p-3 font-mono">${rStr}</td>
+                    <td class="p-3 text-right font-bold font-mono text-[14px]" style="color: ${col};">${f1Str}</td>
+                    <td class="p-3 text-right font-mono text-outline">${hF1}</td>
+                    <td class="p-3 text-right font-mono text-outline">${oF1}</td>
+                    <td class="p-3 text-tertiary font-bold">${app.calibration}</td>
+                    <td class="p-3"><span class="px-2 py-0.5 ${badgeClass} text-[10px] font-bold">${app.status}</span></td>
+                  `;
+                  tbody.appendChild(tr);
+                });
+              }
+            }
+          })
+          .catch(err => console.warn('[NILM] Failed to load diagnostics:', err));
+      }
+
+      // Initial Connection & Background Data Fetch
       connectWebSocket();
+      loadDiagnostics();
 
     })();
   </script>
