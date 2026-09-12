@@ -1,0 +1,19 @@
+{
+  "id": "miteshsingh7/nilm-redd-transfer-deterministic",
+  "title": "NILM REDD Transfer Deterministic",
+  "code_file": "kaggle_redd_transfer.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": true,
+  "enable_gpu": true,
+  "machine_shape": "NvidiaTeslaT4",
+  "enable_tpu": false,
+  "enable_internet": true,
+  "dataset_sources": [
+    "miteshsingh7/nilm-ukdale-pretrained",
+    "miteshsingh7/nilm-redd-processed"
+  ],
+  "competition_sources": [],
+  "kernel_sources": [],
+  "model_sources": []
+}

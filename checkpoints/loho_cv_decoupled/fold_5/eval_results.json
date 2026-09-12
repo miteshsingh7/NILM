@@ -1,0 +1,161 @@
+{
+  "norm_params_source": "checkpoint internal dict (checkpoints/loho_cv_decoupled/fold_5/best_model.pt)",
+  "training_houses": [
+    1,
+    2,
+    3,
+    4,
+    6
+  ],
+  "held_out_house": 5,
+  "in_distribution": {
+    "fridge": {
+      "active_samples": 49570,
+      "predict_zero_nde": 1.0,
+      "nde": 0.956,
+      "beats_zero_baseline": true,
+      "mae_watts": 18.86,
+      "sae": 0.7938,
+      "f1": 0.4858,
+      "precision": 0.6608,
+      "recall": 0.3841,
+      "accuracy": 0.8947
+    },
+    "microwave": {
+      "active_samples": 1480,
+      "predict_zero_nde": 1.0,
+      "nde": 1.0599,
+      "beats_zero_baseline": false,
+      "mae_watts": 6.2,
+      "sae": 0.562,
+      "f1": 0.1869,
+      "precision": 0.1667,
+      "recall": 0.2128,
+      "accuracy": 0.9928
+    },
+    "dishwasher": {
+      "active_samples": 6279,
+      "predict_zero_nde": 1.0,
+      "nde": 0.9779,
+      "beats_zero_baseline": true,
+      "mae_watts": 6.02,
+      "sae": 0.7827,
+      "f1": 0.3635,
+      "precision": 0.7693,
+      "recall": 0.2379,
+      "accuracy": 0.9863
+    },
+    "washing_machine": {
+      "active_samples": 5983,
+      "predict_zero_nde": 1.0,
+      "nde": 0.8747,
+      "beats_zero_baseline": true,
+      "mae_watts": 10.11,
+      "sae": 0.5362,
+      "f1": 0.7309,
+      "precision": 0.9127,
+      "recall": 0.6096,
+      "accuracy": 0.993
+    }
+  },
+  "cross_household": {
+    "fridge": {
+      "active_samples": 11043,
+      "predict_zero_nde": 1.0,
+      "nde": 0.9947,
+      "beats_zero_baseline": true,
+      "mae_watts": 18.76,
+      "sae": 0.9842,
+      "f1": 0.0286,
+      "precision": 0.5606,
+      "recall": 0.0147,
+      "accuracy": 0.7517
+    },
+    "microwave": {
+      "active_samples": 1,
+      "predict_zero_nde": 1.0,
+      "nde": 10.8079,
+      "beats_zero_baseline": false,
+      "mae_watts": 21.33,
+      "sae": 6.0767,
+      "f1": 0.0,
+      "precision": 0.0,
+      "recall": 0.0,
+      "accuracy": 0.9568
+    },
+    "dishwasher": {
+      "active_samples": 494,
+      "predict_zero_nde": 1.0,
+      "nde": 1.1414,
+      "beats_zero_baseline": false,
+      "mae_watts": 5.67,
+      "sae": 0.8718,
+      "f1": 0.442,
+      "precision": 0.3376,
+      "recall": 0.6397,
+      "accuracy": 0.982
+    },
+    "washing_machine": {
+      "active_samples": 0,
+      "predict_zero_nde": 1.0,
+      "nde": NaN,
+      "beats_zero_baseline": false,
+      "mae_watts": 3.67,
+      "sae": 46.5052,
+      "f1": NaN,
+      "precision": NaN,
+      "recall": NaN,
+      "accuracy": NaN
+    }
+  },
+  "comparison_table": [
+    {
+      "Appliance": "fridge",
+      "Predict-Zero NDE": 1.0,
+      "In-Dist NDE": 0.956,
+      "Cross-House NDE": 0.9947,
+      "NDE Gap (Cross-In)": 0.0387,
+      "In-Dist F1": 0.4858,
+      "Cross-House F1": 0.0286,
+      "F1 Gap (Cross-In)": -0.4572,
+      "In-Dist MAE (W)": 18.86,
+      "Cross-House MAE (W)": 18.76
+    },
+    {
+      "Appliance": "microwave",
+      "Predict-Zero NDE": 1.0,
+      "In-Dist NDE": 1.0599,
+      "Cross-House NDE": 10.8079,
+      "NDE Gap (Cross-In)": 9.748,
+      "In-Dist F1": 0.1869,
+      "Cross-House F1": 0.0,
+      "F1 Gap (Cross-In)": -0.1869,
+      "In-Dist MAE (W)": 6.2,
+      "Cross-House MAE (W)": 21.33
+    },
+    {
+      "Appliance": "dishwasher",
+      "Predict-Zero NDE": 1.0,
+      "In-Dist NDE": 0.9779,
+      "Cross-House NDE": 1.1414,
+      "NDE Gap (Cross-In)": 0.1635,
+      "In-Dist F1": 0.3635,
+      "Cross-House F1": 0.442,
+      "F1 Gap (Cross-In)": 0.0785,
+      "In-Dist MAE (W)": 6.02,
+      "Cross-House MAE (W)": 5.67
+    },
+    {
+      "Appliance": "washing_machine",
+      "Predict-Zero NDE": 1.0,
+      "In-Dist NDE": 0.8747,
+      "Cross-House NDE": NaN,
+      "NDE Gap (Cross-In)": NaN,
+      "In-Dist F1": 0.7309,
+      "Cross-House F1": NaN,
+      "F1 Gap (Cross-In)": NaN,
+      "In-Dist MAE (W)": 10.11,
+      "Cross-House MAE (W)": 3.67
+    }
+  ]
+}

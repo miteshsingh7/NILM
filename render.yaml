@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: nilm-telemetry-rack
+    env: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/status
+    envVars:
+      - key: PORT
+        value: 10000

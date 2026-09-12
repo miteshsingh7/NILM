@@ -1,0 +1,1384 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>NILM CORE // DSP TELEMETRY RACK v4.2</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+  <style>
+    @layer base {
+      html, body { margin: 0; padding: 0; background-color: #170c00; color: #ffddb4; font-family: 'Space Mono', monospace; }
+      body { overscroll-behavior: none; }
+    }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #170c00; }
+    ::-webkit-scrollbar-thumb { background: #3c2500; border: 1px solid #5c3f45; }
+    ::-webkit-scrollbar-thumb:hover { background: #513300; }
+    .glow-cyan { filter: drop-shadow(0 0 6px rgba(0, 240, 255, 0.6)); }
+    .glow-magenta { filter: drop-shadow(0 0 6px rgba(255, 0, 122, 0.6)); }
+    .glow-amber { filter: drop-shadow(0 0 6px rgba(255, 170, 0, 0.6)); }
+    .glow-lime { filter: drop-shadow(0 0 6px rgba(0, 255, 102, 0.6)); }
+    .glow-white { filter: drop-shadow(0 0 6px rgba(226, 232, 240, 0.6)); }
+  </style>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "surface": "#1e1000",
+            "surface-dim": "#1e1000",
+            "surface-bright": "#513300",
+            "surface-container-lowest": "#170c00",
+            "surface-container-low": "#291800",
+            "surface-container": "#2f1c00",
+            "surface-container-high": "#3c2500",
+            "surface-container-highest": "#4b2f00",
+            "on-surface": "#ffddb4",
+            "on-surface-variant": "#e5bcc4",
+            "outline": "#ac878f",
+            "outline-variant": "#5c3f45",
+            "primary": "#ffb1c3",
+            "primary-container": "#ff4b89",
+            "on-primary-container": "#590026",
+            "secondary": "#d3fbff",
+            "secondary-container": "#00eefc",
+            "secondary-fixed": "#7df4ff",
+            "on-secondary-fixed": "#002022",
+            "tertiary": "#00e55b",
+            "tertiary-container": "#00a740",
+            "on-tertiary-container": "#00320d",
+            "error": "#ffb4ab",
+            "error-container": "#93000a",
+          },
+          fontFamily: {
+            "code-stream": ["Space Mono", "monospace"],
+            "headline-sm": ["Space Mono", "monospace"],
+            "headline-lg": ["Space Mono", "monospace"],
+            "label-dense": ["Space Mono", "monospace"],
+            "telemetry-display": ["Space Mono", "monospace"],
+            "telemetry-unit": ["Space Mono", "monospace"],
+          }
+        }
+      }
+    };
+  </script>
+</head>
+<body class="bg-surface-container-lowest font-code-stream text-on-surface antialiased select-none">
+
+  <!-- TOPBAR -->
+  <header class="fixed top-0 left-0 right-0 z-50 h-16 bg-surface border-b border-outline-variant">
+    <div class="h-16 w-full px-4 flex items-center justify-between gap-4">
+      
+      <!-- Brand & Version -->
+      <div class="flex items-center gap-3 shrink-0">
+        <div class="w-8 h-8 bg-surface-container border border-primary flex items-center justify-center text-primary font-bold text-[14px]">
+          ⚡
+        </div>
+        <div class="flex flex-col border-l border-outline-variant pl-3">
+          <span class="font-headline-sm text-[16px] uppercase text-primary font-bold tracking-tight">NILM_CORE</span>
+          <span class="font-label-dense text-[10px] text-on-surface-variant uppercase tracking-widest">DSP_TELEMETRY_RACK_v4.2</span>
+        </div>
+      </div>
+
+      <!-- Feeder Selector -->
+      <div class="hidden xl:flex items-center gap-2 bg-surface-container-lowest border border-outline-variant px-3 py-1.5 cursor-pointer hover:border-primary transition-colors" id="btn-feeder-modal">
+        <span class="w-2 h-2 rounded-full bg-tertiary animate-pulse"></span>
+        <span class="font-label-dense text-[10px] text-tertiary uppercase font-bold">SAMPLING 100Hz</span>
+        <span class="text-outline-variant mx-1">|</span>
+        <span class="font-code-stream text-[11px] text-on-surface font-bold" id="top-feeder-title">FEEDER #02</span>
+        <span class="font-code-stream text-[11px] text-on-surface-variant" id="top-feeder-desc">- Residential Sub-Panel [House 2 - Generalization]</span>
+        <span class="material-symbols-outlined text-[16px] text-on-surface-variant ml-1">unfold_more</span>
+      </div>
+
+      <!-- Electrical Meters Strip -->
+      <div class="hidden 2xl:flex items-center gap-4 bg-surface-container-low border border-outline-variant px-4 py-1.5">
+        <div class="flex flex-col">
+          <span class="font-label-dense text-[10px] text-on-surface-variant">MAINS RMS</span>
+          <span class="font-code-stream text-[12px] text-secondary font-bold" id="meter-vrms">238.4 V</span>
+        </div>
+        <span class="text-outline-variant">/</span>
+        <div class="flex flex-col">
+          <span class="font-label-dense text-[10px] text-on-surface-variant">CURRENT</span>
+          <span class="font-code-stream text-[12px] text-secondary font-bold" id="meter-irms">14.8 A</span>
+        </div>
+        <span class="text-outline-variant">/</span>
+        <div class="flex flex-col">
+          <span class="font-label-dense text-[10px] text-on-surface-variant">FREQUENCY</span>
+          <span class="font-code-stream text-[12px] text-secondary font-bold" id="meter-freq">59.98 Hz</span>
+        </div>
+        <span class="text-outline-variant">/</span>
+        <div class="flex flex-col">
+          <span class="font-label-dense text-[10px] text-on-surface-variant">ACTIVE PWR</span>
+          <span class="font-code-stream text-[12px] text-tertiary font-bold" id="meter-pwr">3.52 kW</span>
+        </div>
+      </div>
+
+      <!-- Time & Operator -->
+      <div class="flex items-center gap-4 shrink-0">
+        <div class="hidden lg:flex items-center gap-1.5 bg-surface-container-lowest border border-outline-variant px-3 py-1 font-code-stream text-[11px] text-on-surface-variant">
+          <span class="material-symbols-outlined text-[14px] text-tertiary">schedule</span>
+          <span class="text-on-surface" id="top-utc-time">UTC 14:32:08.441</span>
+        </div>
+        <div class="flex items-center gap-3 pl-3 border-l border-outline-variant">
+          <div class="flex flex-col text-right hidden sm:flex">
+            <span class="font-headline-sm text-[12px] uppercase text-on-surface font-bold">ENG // S. JENSEN</span>
+            <span class="font-label-dense text-[9px] text-tertiary uppercase">SYS_AUTH // L3_OPERATOR</span>
+          </div>
+          <div class="w-8 h-8 rounded-full bg-surface-container-high border border-outline-variant flex items-center justify-center text-on-surface text-[12px] font-bold">
+            SJ
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- SIDEBAR NAVIGATION -->
+  <aside class="fixed left-0 top-16 h-[calc(100vh-4rem)] w-64 bg-surface-container-lowest border-r border-outline-variant z-40 flex flex-col justify-between">
+    <div class="p-3">
+      <div class="px-3 py-1.5 mb-3 bg-surface-container border border-outline-variant flex items-center justify-between">
+        <span class="font-label-dense text-[10px] text-on-surface-variant uppercase">TELEMETRY BUS</span>
+        <span class="font-label-dense text-[10px] text-tertiary font-bold flex items-center gap-1">
+          <span class="w-1.5 h-1.5 rounded-full bg-tertiary animate-ping"></span> ONLINE
+        </span>
+      </div>
+      <nav class="flex flex-col gap-1" id="sidebar-nav">
+        <button class="nav-tab flex items-center justify-between px-3 py-2.5 bg-primary-container text-on-primary-container font-bold border border-primary-container text-left transition-colors w-full" data-view="view-01">
+          <div class="flex items-center gap-3">
+            <span class="material-symbols-outlined text-[18px]">insights</span>
+            <span class="font-code-stream text-[11px] uppercase tracking-wider">Live Disaggregation</span>
+          </div>
+          <span class="font-label-dense text-[10px] text-on-primary-container opacity-80">01</span>
+        </button>
+        <button class="nav-tab flex items-center justify-between px-3 py-2.5 border border-transparent text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface text-left transition-colors w-full" data-view="view-02">
+          <div class="flex items-center gap-3">
+            <span class="material-symbols-outlined text-[18px]">analytics</span>
+            <span class="font-code-stream text-[11px] uppercase tracking-wider">Usage & Cost</span>
+          </div>
+          <span class="font-label-dense text-[10px] text-outline">02</span>
+        </button>
+        <button class="nav-tab flex items-center justify-between px-3 py-2.5 border border-transparent text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface text-left transition-colors w-full" data-view="view-03">
+          <div class="flex items-center gap-3">
+            <span class="material-symbols-outlined text-[18px]">fingerprint</span>
+            <span class="font-code-stream text-[11px] uppercase tracking-wider">Signatures</span>
+          </div>
+          <span class="font-label-dense text-[10px] text-outline">03</span>
+        </button>
+        <button class="nav-tab flex items-center justify-between px-3 py-2.5 border border-transparent text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface text-left transition-colors w-full" data-view="view-04">
+          <div class="flex items-center gap-3">
+            <span class="material-symbols-outlined text-[18px]">developer_board</span>
+            <span class="font-code-stream text-[11px] uppercase tracking-wider">Sensor Feeds</span>
+          </div>
+          <span class="font-label-dense text-[10px] text-outline">04</span>
+        </button>
+        <button class="nav-tab flex items-center justify-between px-3 py-2.5 border border-transparent text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface text-left transition-colors w-full" data-view="view-05">
+          <div class="flex items-center gap-3">
+            <span class="material-symbols-outlined text-[18px]">terminal</span>
+            <span class="font-code-stream text-[11px] uppercase tracking-wider">Diagnostics</span>
+          </div>
+          <span class="font-label-dense text-[10px] text-outline">05</span>
+        </button>
+      </nav>
+    </div>
+
+    <!-- Bottom Rack Info -->
+    <div class="p-3 border-t border-outline-variant bg-surface-container-lowest">
+      <div class="flex flex-col gap-1 font-code-stream text-[11px] text-outline">
+        <div class="flex justify-between">
+          <span>ADC BUFFER</span>
+          <span class="text-tertiary">SYNCHRONIZED</span>
+        </div>
+        <div class="flex justify-between">
+          <span>LATENCY</span>
+          <span class="text-on-surface" id="side-latency">4.8 ms</span>
+        </div>
+        <div class="flex justify-between">
+          <span>INFERENCE</span>
+          <span class="text-secondary">NEURAL_DECOUPLED</span>
+        </div>
+      </div>
+      <div class="mt-3 pt-3 border-t border-outline-variant flex items-center justify-between text-on-surface-variant font-label-dense text-[10px]">
+        <span>PANEL REV // C.4</span>
+        <span class="text-primary font-bold">CORE OK</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN VIEW CONTAINER -->
+  <div class="pl-64">
+    <main class="w-full pt-16 bg-surface-container-lowest min-h-screen">
+      <div class="p-6 flex flex-col w-full max-w-[1780px] mx-auto gap-6">
+
+        <!-- ========================================================================= -->
+        <!-- VIEW 01: LIVE DISAGGREGATION (DEFAULT ACTIVE) -->
+        <!-- ========================================================================= -->
+        <div id="view-01" class="view-panel flex flex-col gap-6">
+
+          <!-- 1. CLEAN TRANSPORT & TIMEBASE BAR -->
+          <div class="bg-surface-container-lowest border border-outline-variant p-4 flex flex-col gap-3">
+            <div class="flex flex-wrap items-center justify-between gap-4">
+              
+              <!-- Transport Controls -->
+              <div class="flex items-center gap-3">
+                <button id="btn-play" class="px-4 py-2 bg-tertiary-container border border-tertiary-container text-on-tertiary-container font-code-stream text-[12px] uppercase tracking-wider font-bold transition-none flex items-center gap-2">
+                  <span class="material-symbols-outlined text-[16px]">play_arrow</span> PLAYING [LIVE]
+                </button>
+                <button id="btn-pause" class="px-4 py-2 bg-surface-container border border-outline-variant text-on-surface-variant font-code-stream text-[12px] uppercase tracking-wider hover:text-on-surface transition-none flex items-center gap-2">
+                  <span class="material-symbols-outlined text-[16px]">pause</span> PAUSE
+                </button>
+                <button id="btn-reset" class="px-4 py-2 bg-surface-container border border-outline-variant text-on-surface-variant font-code-stream text-[12px] uppercase tracking-wider hover:text-on-surface transition-none flex items-center gap-2">
+                  <span class="material-symbols-outlined text-[16px]">replay</span> RESET
+                </button>
+
+                <div class="h-6 w-[1px] bg-outline-variant mx-1"></div>
+
+                <!-- Playback Speed Selectors -->
+                <div class="flex items-center border border-outline-variant bg-surface-container-lowest font-code-stream text-[11px]" id="speed-selector">
+                  <button class="btn-speed px-2.5 py-1 text-on-surface-variant hover:text-on-surface border-r border-outline-variant" data-speed="0.5">0.5x</button>
+                  <button class="btn-speed px-2.5 py-1 bg-secondary-fixed text-on-secondary-fixed font-bold border-r border-outline-variant" data-speed="1.0">1.0x</button>
+                  <button class="btn-speed px-2.5 py-1 text-on-surface-variant hover:text-on-surface border-r border-outline-variant" data-speed="5.0">5x</button>
+                  <button class="btn-speed px-2.5 py-1 text-on-surface-variant hover:text-on-surface" data-speed="10.0">10x</button>
+                </div>
+              </div>
+
+              <!-- Stream Info Badges -->
+              <div class="flex items-center gap-6 font-code-stream text-[12px]">
+                <div class="flex items-center gap-2">
+                  <span class="w-2.5 h-2.5 rounded-full bg-tertiary animate-pulse"></span>
+                  <span class="text-tertiary font-bold" id="stream-rate-badge">100 Hz REALTIME</span>
+                </div>
+                <div class="flex items-center gap-2 text-on-surface-variant">
+                  <span class="text-outline">LATENCY:</span>
+                  <span class="text-secondary font-bold" id="metric-latency">4.8ms</span>
+                </div>
+                <div class="flex items-center gap-2 border border-outline-variant bg-surface-container px-3 py-1">
+                  <span class="text-outline font-label-dense uppercase text-[10px]">MODEL:</span>
+                  <span class="text-primary font-bold text-[12px]">T-CNN + Bi-LSTM</span>
+                  <span class="ml-1 text-tertiary text-label-dense font-bold text-[10px]">[DECOUPLED]</span>
+                </div>
+                <div class="flex items-center gap-2 border border-outline-variant bg-surface-container px-3 py-1">
+                  <span class="text-outline font-label-dense uppercase text-[10px]">MODE:</span>
+                  <span class="text-[#ffaa00] font-bold text-[11px]">DEMO SNIPPET (33.3h)</span>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Scrubber Timeline -->
+            <div class="flex flex-col gap-1.5 mt-1">
+              <div class="flex justify-between items-center font-code-stream text-[11px] text-on-surface-variant mb-1">
+                <div class="flex items-center gap-2">
+                  <span class="text-primary font-bold">TIMESTAMP:</span>
+                  <span class="text-on-surface font-mono" id="timeline-timestamp">2025-05-18 19:42:15.820</span>
+                </div>
+                <div class="flex items-center gap-4 font-label-dense text-outline text-[10px]">
+                  <span>TIMEBASE: 5.0s/DIV</span>
+                  <span>SNIPPET: 20,000 SAMPLES (~33.3 HOURS)</span>
+                  <span>WINDOW: 60 SECONDS</span>
+                </div>
+              </div>
+
+              <!-- Interactive Timeline Scrubber Track -->
+              <div class="relative w-full h-7 bg-surface-container-low border border-outline-variant overflow-hidden cursor-pointer" id="scrubber-track">
+                <div class="absolute top-0 bottom-0 left-0 bg-surface-container-high/40" id="scrubber-fill" style="width: 0%;"></div>
+                <div class="absolute top-0 bottom-0 w-[2px] bg-tertiary z-30 transition-none" id="scrubber-needle" style="left: 0%;">
+                  <div class="w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-tertiary -ml-[3px]"></div>
+                </div>
+                <div class="absolute bottom-0 inset-x-0 flex justify-between px-3 font-label-dense text-[10px] text-outline pointer-events-none select-none">
+                  <span>START [T=0]</span>
+                  <span>25%</span>
+                  <span>50%</span>
+                  <span>75%</span>
+                  <span>END [T=MAX]</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- 2. STREAMLINED APPLIANCE STATUS STRIP -->
+          <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
+            
+            <!-- CH1 Refrigerator -->
+            <div class="bg-surface-container p-4 border border-outline-variant flex flex-col justify-between h-28" id="card-fridge">
+              <div class="flex items-center justify-between">
+                <span class="font-code-stream text-[11px] text-[#00f0ff] font-bold">CH1 // REFRIGERATOR</span>
+                <span class="bg-[#00f0ff] text-[#090a0f] font-label-dense text-[10px] font-bold px-2 py-0.5" id="badge-fridge">ACTIVE</span>
+              </div>
+              <div class="flex items-baseline gap-2">
+                <span class="font-telemetry-display text-[26px] leading-none text-[#00f0ff] font-bold" id="watts-fridge">142</span>
+                <span class="font-telemetry-unit text-[11px] text-outline">W</span>
+              </div>
+              <div class="flex justify-between items-center font-code-stream text-[11px] text-outline border-t border-outline-variant pt-2">
+                <span class="truncate" id="substate-fridge">Cycle 3 (Inverter)</span>
+                <span class="text-tertiary font-bold" id="conf-fridge">99.2%</span>
+              </div>
+            </div>
+
+            <!-- CH2 Dishwasher -->
+            <div class="bg-surface-container p-4 border border-outline-variant flex flex-col justify-between h-28" id="card-dishwasher">
+              <div class="flex items-center justify-between">
+                <span class="font-code-stream text-[11px] text-primary font-bold">CH2 // DISHWASHER</span>
+                <span class="bg-primary text-on-primary font-label-dense text-[10px] font-bold px-2 py-0.5" id="badge-dishwasher">ACTIVE</span>
+              </div>
+              <div class="flex items-baseline gap-2">
+                <span class="font-telemetry-display text-[26px] leading-none text-primary font-bold" id="watts-dishwasher">1,850</span>
+                <span class="font-telemetry-unit text-[11px] text-outline">W</span>
+              </div>
+              <div class="flex justify-between items-center font-code-stream text-[11px] text-outline border-t border-outline-variant pt-2">
+                <span class="truncate" id="substate-dishwasher">Heating Element</span>
+                <span class="text-tertiary font-bold" id="conf-dishwasher">97.6%</span>
+              </div>
+            </div>
+
+            <!-- CH3 Microwave -->
+            <div class="bg-surface-container p-4 border border-outline-variant flex flex-col justify-between h-28" id="card-microwave">
+              <div class="flex items-center justify-between">
+                <span class="font-code-stream text-[11px] text-[#ffaa00] font-bold">CH3 // MICROWAVE</span>
+                <span class="bg-[#ffaa00] text-[#090a0f] font-label-dense text-[10px] font-bold px-2 py-0.5" id="badge-microwave">ACTIVE</span>
+              </div>
+              <div class="flex items-baseline gap-2">
+                <span class="font-telemetry-display text-[26px] leading-none text-[#ffaa00] font-bold" id="watts-microwave">1,200</span>
+                <span class="font-telemetry-unit text-[11px] text-outline">W</span>
+              </div>
+              <div class="flex justify-between items-center font-code-stream text-[11px] text-outline border-t border-outline-variant pt-2">
+                <span class="truncate" id="substate-microwave">Magnetron 100%</span>
+                <span class="text-tertiary font-bold" id="conf-microwave">94.8%</span>
+              </div>
+            </div>
+
+            <!-- CH4 Washing Machine -->
+            <div class="bg-surface-container p-4 border border-outline-variant flex flex-col justify-between h-28" id="card-washer">
+              <div class="flex items-center justify-between">
+                <span class="font-code-stream text-[11px] text-[#00ff66] font-bold">CH4 // WASHING</span>
+                <span class="border border-outline-variant text-outline font-label-dense text-[10px] px-2 py-0.5" id="badge-washer">STANDBY</span>
+              </div>
+              <div class="flex items-baseline gap-2">
+                <span class="font-telemetry-display text-[26px] leading-none text-on-surface-variant font-bold" id="watts-washer">1.4</span>
+                <span class="font-telemetry-unit text-[11px] text-outline">W</span>
+              </div>
+              <div class="flex justify-between items-center font-code-stream text-[11px] text-outline border-t border-outline-variant pt-2">
+                <span class="truncate" id="substate-washer">Standby (MCU)</span>
+                <span class="text-outline font-bold" id="conf-washer">99.8%</span>
+              </div>
+            </div>
+
+            <!-- Total Active Load -->
+            <div class="bg-surface-container-high p-4 border border-outline-variant flex flex-col justify-between h-28">
+              <div class="flex items-center justify-between">
+                <span class="font-code-stream text-[11px] text-secondary font-bold uppercase">TOTAL ACTIVE LOAD</span>
+                <span class="bg-tertiary text-on-tertiary font-label-dense text-[10px] font-bold px-2 py-0.5" id="badge-active-count">3 LOADS</span>
+              </div>
+              <div class="flex items-baseline justify-between">
+                <div class="flex items-baseline gap-2">
+                  <span class="font-telemetry-display text-[26px] leading-none text-on-surface font-bold" id="watts-total-active">3,193.4</span>
+                  <span class="font-telemetry-unit text-[11px] text-secondary uppercase">W</span>
+                </div>
+                <span class="font-code-stream text-[12px] text-secondary font-bold" id="amps-total-active">13.31A</span>
+              </div>
+              <div class="flex justify-between items-center font-code-stream text-[11px] text-outline border-t border-outline-variant pt-2">
+                <span id="label-residual">Residual: 24.3W</span>
+                <span class="text-tertiary font-bold" id="label-snr">SNR: 42dB</span>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- 3. MAIN AGGREGATE OSCILLOSCOPE -->
+          <div class="bg-surface-container-lowest border border-outline-variant flex flex-col">
+            <div class="h-10 bg-surface-container px-4 border-b border-outline-variant flex items-center justify-between">
+              <div class="flex items-center gap-4">
+                <span class="font-code-stream text-[12px] text-on-surface font-bold uppercase tracking-wider">
+                  MAINS FEED // AGGREGATE ACTIVE POWER (RAW STREAM)
+                </span>
+              </div>
+              <div class="flex items-center gap-4 font-code-stream text-[11px] text-on-surface-variant">
+                <span>SCALE: 500W/DIV</span>
+                <span class="text-tertiary font-bold flex items-center gap-1.5">
+                  <span class="w-2 h-2 rounded-full bg-tertiary animate-pulse"></span> LIVE WAVEFORM
+                </span>
+              </div>
+            </div>
+
+            <!-- Oscilloscope Display Canvas -->
+            <div class="relative w-full h-64 bg-[#090a0f] overflow-hidden">
+              <canvas id="scope-mains" class="w-full h-full block"></canvas>
+              
+              <!-- Scale Labels -->
+              <div class="absolute left-3 top-3 bottom-3 flex flex-col justify-between font-code-stream text-[10px] text-outline pointer-events-none select-none z-10">
+                <span>4000W</span>
+                <span>3000W</span>
+                <span>2000W</span>
+                <span>1000W</span>
+                <span>0W</span>
+              </div>
+              <div class="absolute right-3 bottom-2 flex gap-8 font-code-stream text-[10px] text-outline pointer-events-none select-none z-10">
+                <span>-50s</span>
+                <span>-40s</span>
+                <span>-30s</span>
+                <span>-20s</span>
+                <span>-10s</span>
+                <span>0s [LIVE]</span>
+              </div>
+
+              <!-- Floating Live Cursor Box -->
+              <div class="absolute right-4 top-3 z-20 bg-surface-container-lowest/90 border border-outline-variant px-3 py-1.5 font-code-stream text-[11px] pointer-events-none">
+                <div class="text-on-surface font-bold leading-normal" id="scope-pagg-readout">P_AGG: 3,193.4 W</div>
+                <div class="text-tertiary text-[10px] leading-normal" id="scope-load-count">3 LOADS ENERGIZED</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4. ISOLATED CHANNEL BREAKDOWNS -->
+          <div class="flex flex-col border border-outline-variant bg-surface-container-lowest">
+            <div class="px-4 py-2.5 bg-surface-container border-b border-outline-variant flex justify-between items-center">
+              <span class="font-code-stream text-[12px] text-on-surface uppercase font-bold tracking-wider">
+                DISAGGREGATED APPLIANCE CHANNELS // REAL-TIME DECOMPOSITION
+              </span>
+              <span class="font-code-stream text-[10px] text-outline">NEURAL DISAGGREGATION STREAM</span>
+            </div>
+
+            <!-- Channel 1: Refrigerator -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 border-b border-outline-variant items-stretch">
+              <div class="lg:col-span-3 px-4 py-3 bg-surface-container border-b lg:border-b-0 lg:border-r border-outline-variant flex items-center justify-between">
+                <div class="flex flex-col">
+                  <span class="font-code-stream text-[11px] text-[#00f0ff] font-bold">CH1 // REFRIGERATOR</span>
+                  <span class="font-code-stream text-[10px] text-outline">Compressor Inverter</span>
+                </div>
+                <span class="font-telemetry-display text-[16px] text-[#00f0ff] font-bold" id="scope-val-fridge">142 W</span>
+              </div>
+              <div class="lg:col-span-9 relative h-16 bg-[#090a0f] overflow-hidden flex items-center">
+                <canvas id="scope-fridge" class="w-full h-full block"></canvas>
+                <div class="absolute right-3 top-2 font-code-stream text-[10px] text-outline">50W/DIV</div>
+              </div>
+            </div>
+
+            <!-- Channel 2: Dishwasher -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 border-b border-outline-variant items-stretch">
+              <div class="lg:col-span-3 px-4 py-3 bg-surface-container border-b lg:border-b-0 lg:border-r border-outline-variant flex items-center justify-between">
+                <div class="flex flex-col">
+                  <span class="font-code-stream text-[11px] text-primary font-bold">CH2 // DISHWASHER</span>
+                  <span class="font-code-stream text-[10px] text-outline">Resistive Heat Phase</span>
+                </div>
+                <span class="font-telemetry-display text-[16px] text-primary font-bold" id="scope-val-dishwasher">1,850 W</span>
+              </div>
+              <div class="lg:col-span-9 relative h-16 bg-[#090a0f] overflow-hidden flex items-center">
+                <canvas id="scope-dishwasher" class="w-full h-full block"></canvas>
+                <div class="absolute right-3 top-2 font-code-stream text-[10px] text-outline">500W/DIV</div>
+              </div>
+            </div>
+
+            <!-- Channel 3: Microwave -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 border-b border-outline-variant items-stretch">
+              <div class="lg:col-span-3 px-4 py-3 bg-surface-container border-b lg:border-b-0 lg:border-r border-outline-variant flex items-center justify-between">
+                <div class="flex flex-col">
+                  <span class="font-code-stream text-[11px] text-[#ffaa00] font-bold">CH3 // MICROWAVE</span>
+                  <span class="font-code-stream text-[10px] text-outline">Magnetron Pulse</span>
+                </div>
+                <span class="font-telemetry-display text-[16px] text-[#ffaa00] font-bold" id="scope-val-microwave">1,200 W</span>
+              </div>
+              <div class="lg:col-span-9 relative h-16 bg-[#090a0f] overflow-hidden flex items-center">
+                <canvas id="scope-microwave" class="w-full h-full block"></canvas>
+                <div class="absolute right-3 top-2 font-code-stream text-[10px] text-outline">500W/DIV</div>
+              </div>
+            </div>
+
+            <!-- Channel 4: Washing Machine -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 items-stretch">
+              <div class="lg:col-span-3 px-4 py-3 bg-surface-container border-b lg:border-b-0 lg:border-r border-outline-variant flex items-center justify-between opacity-90">
+                <div class="flex flex-col">
+                  <span class="font-code-stream text-[11px] text-[#00ff66] font-bold">CH4 // WASHING</span>
+                  <span class="font-code-stream text-[10px] text-outline">BLDC Motor Agitation</span>
+                </div>
+                <span class="font-telemetry-display text-[16px] text-[#00ff66] font-bold" id="scope-val-washer">1.4 W</span>
+              </div>
+              <div class="lg:col-span-9 relative h-16 bg-[#090a0f] overflow-hidden flex items-center">
+                <canvas id="scope-washer" class="w-full h-full block"></canvas>
+                <div class="absolute right-3 top-2 font-code-stream text-[10px] text-outline">500W/DIV</div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- 5. STREAMLINED FOOTER TELEMETRY -->
+          <div class="bg-surface-container px-4 py-3 border border-outline-variant flex flex-wrap items-center justify-between gap-4">
+            <div class="flex flex-wrap items-center gap-6 font-code-stream text-[12px]">
+              <div class="flex items-center gap-2">
+                <span class="text-outline">INFERENCE:</span>
+                <span class="text-secondary font-bold" id="footer-inference">4.8ms</span>
+              </div>
+              <span class="text-outline-variant">|</span>
+              <div class="flex items-center gap-2">
+                <span class="text-outline">RESIDUAL:</span>
+                <span class="text-primary font-bold" id="footer-residual">24.3 W</span>
+              </div>
+              <span class="text-outline-variant">|</span>
+              <div class="flex items-center gap-2">
+                <span class="text-outline">EXPLAINED VAR:</span>
+                <span class="text-tertiary font-bold" id="footer-expvar">98.4%</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <button id="btn-export-telemetry" class="px-4 py-2 bg-surface-container-lowest border border-primary text-primary hover:bg-primary hover:text-on-primary font-code-stream text-[12px] font-bold uppercase tracking-wider transition-none flex items-center gap-2">
+                <span class="material-symbols-outlined text-[16px]">file_download</span> EXPORT TELEMETRY
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ========================================================================= -->
+        <!-- VIEW 02: USAGE & COST ATTRIBUTION -->
+        <!-- ========================================================================= -->
+        <div id="view-02" class="view-panel hidden flex flex-col gap-6">
+          
+          <!-- Tariff Configuration Header -->
+          <div class="bg-surface-container p-4 border border-outline-variant flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+              <span class="material-symbols-outlined text-primary text-[24px]">monetization_on</span>
+              <div>
+                <div class="font-headline-sm text-[16px] uppercase font-bold text-on-surface">ENERGY ATTRIBUTION & BILLING CONSOLE</div>
+                <div class="font-label-dense text-[10px] text-outline">REAL-TIME COST APPORTIONMENT ACCORDING TO TARIFF CONTRACT</div>
+              </div>
+            </div>
+            <div class="flex items-center gap-4 bg-surface-container-lowest border border-outline-variant px-4 py-2">
+              <span class="font-label-dense text-[11px] text-on-surface-variant uppercase">ELECTRICITY TARIFF:</span>
+              <div class="flex items-center gap-1 font-mono font-bold text-tertiary">
+                <span>$</span>
+                <input type="number" id="tariff-input" step="0.01" min="0.01" max="1.0" value="0.15" class="w-16 bg-surface border border-outline-variant text-right px-1 text-tertiary font-bold font-mono focus:outline-none focus:border-tertiary">
+                <span class="text-outline text-[11px]">/ kWh</span>
+              </div>
+              <button id="btn-update-tariff" class="px-3 py-1 bg-surface-container border border-outline-variant text-on-surface hover:text-primary text-[11px] uppercase font-bold">APPLY</button>
+            </div>
+          </div>
+
+          <!-- KPI Summary Cards -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+            <div class="bg-surface-container p-4 border border-outline-variant flex flex-col justify-between">
+              <span class="font-label-dense text-[10px] text-outline uppercase">DAILY CONSUMPTION</span>
+              <div class="flex items-baseline gap-2 my-2">
+                <span class="font-telemetry-display text-[28px] text-secondary font-bold" id="cost-daily-kwh">10.00</span>
+                <span class="font-telemetry-unit text-[11px] text-outline">kWh</span>
+              </div>
+              <span class="font-code-stream text-[11px] text-on-surface-variant">Measured over 24-hr period</span>
+            </div>
+            <div class="bg-surface-container p-4 border border-outline-variant flex flex-col justify-between">
+              <span class="font-label-dense text-[10px] text-outline uppercase">DAILY COST</span>
+              <div class="flex items-baseline gap-2 my-2">
+                <span class="font-telemetry-display text-[28px] text-tertiary font-bold" id="cost-daily-val">$1.50</span>
+                <span class="font-telemetry-unit text-[11px] text-outline">USD</span>
+              </div>
+              <span class="font-code-stream text-[11px] text-on-surface-variant">Attributed load cost</span>
+            </div>
+            <div class="bg-surface-container p-4 border border-outline-variant flex flex-col justify-between">
+              <span class="font-label-dense text-[10px] text-outline uppercase">PROJECTED WEEKLY</span>
+              <div class="flex items-baseline gap-2 my-2">
+                <span class="font-telemetry-display text-[28px] text-on-surface font-bold" id="cost-weekly-kwh">70.00</span>
+                <span class="font-telemetry-unit text-[11px] text-outline">kWh</span>
+              </div>
+              <span class="font-code-stream text-[11px] text-tertiary font-bold" id="cost-weekly-val">Est: $10.50</span>
+            </div>
+            <div class="bg-surface-container p-4 border border-outline-variant flex flex-col justify-between">
+              <span class="font-label-dense text-[10px] text-outline uppercase">DISAGGREGATION COVERAGE</span>
+              <div class="flex items-baseline gap-2 my-2">
+                <span class="font-telemetry-display text-[28px] text-primary font-bold" id="cost-coverage-pct">87.4%</span>
+                <span class="font-telemetry-unit text-[11px] text-outline">ATTRIBUTED</span>
+              </div>
+              <span class="font-code-stream text-[11px] text-outline">Residual base load: 12.6%</span>
+            </div>
+          </div>
+
+          <!-- Stacked Attribution Progress Bar -->
+          <div class="bg-surface-container border border-outline-variant p-4 flex flex-col gap-2">
+            <div class="flex justify-between items-center text-[11px]">
+              <span class="text-on-surface uppercase font-bold">ENERGY SHARE ATTRIBUTION</span>
+              <span class="text-outline font-label-dense">100% TOTAL ACTIVE</span>
+            </div>
+            <div class="w-full h-5 bg-surface-container-lowest border border-outline-variant flex overflow-hidden" id="cost-progress-bar">
+              <div class="bg-[#00f0ff] h-full" style="width: 25%;" title="Refrigerator: 25%"></div>
+              <div class="bg-[#ff007a] h-full" style="width: 35%;" title="Dishwasher: 35%"></div>
+              <div class="bg-[#ffaa00] h-full" style="width: 10%;" title="Microwave: 10%"></div>
+              <div class="bg-[#00ff66] h-full" style="width: 15%;" title="Washing Machine: 15%"></div>
+              <div class="bg-[#e5bcc4] h-full" style="width: 15%;" title="Base Load Residual: 15%"></div>
+            </div>
+          </div>
+
+          <!-- Breakdown Table -->
+          <div class="bg-surface-container-lowest border border-outline-variant">
+            <div class="p-3 bg-surface-container border-b border-outline-variant font-code-stream text-[12px] font-bold uppercase text-on-surface">
+              ITEMIZED APPLIANCE ATTRIBUTION MATRIX
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left font-code-stream text-[12px] border-collapse" id="table-usage-cost">
+                <thead>
+                  <tr class="border-b border-outline-variant text-outline text-[11px] uppercase bg-surface-container-low">
+                    <th class="p-3">Channel / Appliance</th>
+                    <th class="p-3">Signature Characteristic</th>
+                    <th class="p-3 text-right">Daily Energy (kWh)</th>
+                    <th class="p-3 text-right">Daily Cost ($)</th>
+                    <th class="p-3 text-right">Weekly Energy (kWh)</th>
+                    <th class="p-3 text-right">Weekly Cost ($)</th>
+                    <th class="p-3 text-right">Share (%)</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-outline-variant" id="tbody-usage-cost">
+                  <!-- Injected via JavaScript -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ========================================================================= -->
+        <!-- VIEW 03: APPLIANCE SIGNATURES -->
+        <!-- ========================================================================= -->
+        <div id="view-03" class="view-panel hidden flex flex-col gap-6">
+          <div class="bg-surface-container p-4 border border-outline-variant flex items-center justify-between">
+            <div>
+              <div class="font-headline-sm text-[16px] uppercase font-bold text-on-surface">ELECTRICAL SIGNATURE SPECTROMETRY</div>
+              <div class="font-label-dense text-[10px] text-outline">EXTRACTED PHYSICAL POWER CHARACTERISTICS & WAVEFORM TEMPLATES</div>
+            </div>
+            <span class="px-3 py-1 bg-surface-container-lowest border border-outline-variant text-secondary text-[11px] font-bold uppercase">
+              REDD HIGH-RESOLUTION CATALOG
+            </span>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="signatures-container">
+            <!-- Dynamically populated via get_appliance_signatures() -->
+          </div>
+        </div>
+
+        <!-- ========================================================================= -->
+        <!-- VIEW 04: HARDWARE & SENSOR FEEDS -->
+        <!-- ========================================================================= -->
+        <div id="view-04" class="view-panel hidden flex flex-col gap-6">
+          <div class="bg-surface-container p-4 border border-outline-variant flex items-center justify-between">
+            <div>
+              <div class="font-headline-sm text-[16px] uppercase font-bold text-on-surface">HARDWARE INSTRUMENTATION & SENSOR BUS</div>
+              <div class="font-label-dense text-[10px] text-outline">PRIMARY TRANSDUCER TELEMETRY & GRID POWER QUALITY METRICS</div>
+            </div>
+            <span class="px-3 py-1 bg-surface-container-lowest border border-tertiary text-tertiary text-[11px] font-bold uppercase flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-tertiary animate-ping"></span> DSP RACK SYNCHRONIZED
+            </span>
+          </div>
+
+          <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            
+            <!-- ADC & Front-End Hardware -->
+            <div class="bg-surface-container-lowest border border-outline-variant p-5 flex flex-col gap-4">
+              <div class="border-b border-outline-variant pb-2 font-headline-sm text-[14px] uppercase font-bold text-primary">
+                ADC FRONT-END & SAMPLING PIPELINE
+              </div>
+              <div class="grid grid-cols-2 gap-4 font-code-stream text-[12px]">
+                <div class="bg-surface-container p-3 border border-outline-variant">
+                  <div class="text-outline text-[10px] uppercase">SAMPLING FREQUENCY</div>
+                  <div class="text-secondary font-bold text-[18px] mt-1">100.00 Hz</div>
+                  <div class="text-[10px] text-on-surface-variant">Nyquist Anti-Aliased</div>
+                </div>
+                <div class="bg-surface-container p-3 border border-outline-variant">
+                  <div class="text-outline text-[10px] uppercase">CURRENT TRANSDUCER (CT)</div>
+                  <div class="text-on-surface font-bold text-[18px] mt-1">100A : 50mA</div>
+                  <div class="text-[10px] text-on-surface-variant">Split-core Hall Sensor</div>
+                </div>
+                <div class="bg-surface-container p-3 border border-outline-variant">
+                  <div class="text-outline text-[10px] uppercase">VOLTAGE SENSOR (VT)</div>
+                  <div class="text-on-surface font-bold text-[18px] mt-1">240V : 2.5V RMS</div>
+                  <div class="text-[10px] text-on-surface-variant">Galvanic Opto-Isolation</div>
+                </div>
+                <div class="bg-surface-container p-3 border border-outline-variant">
+                  <div class="text-outline text-[10px] uppercase">BUFFER JITTER</div>
+                  <div class="text-tertiary font-bold text-[18px] mt-1">&lt; 0.03 ms</div>
+                  <div class="text-[10px] text-tertiary">0 Dropped Packets</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Power Quality & Harmonic Analysis -->
+            <div class="bg-surface-container-lowest border border-outline-variant p-5 flex flex-col gap-4">
+              <div class="border-b border-outline-variant pb-2 font-headline-sm text-[14px] uppercase font-bold text-secondary">
+                POWER QUALITY & GRID HARMONICS
+              </div>
+              <div class="grid grid-cols-2 gap-4 font-code-stream text-[12px]">
+                <div class="bg-surface-container p-3 border border-outline-variant">
+                  <div class="text-outline text-[10px] uppercase">POWER FACTOR (COS φ)</div>
+                  <div class="text-tertiary font-bold text-[18px] mt-1">0.96 Lagging</div>
+                  <div class="text-[10px] text-outline">Phase Angle: 16.2°</div>
+                </div>
+                <div class="bg-surface-container p-3 border border-outline-variant">
+                  <div class="text-outline text-[10px] uppercase">TOTAL HARMONIC DISTORTION</div>
+                  <div class="text-secondary font-bold text-[18px] mt-1">2.4% THD</div>
+                  <div class="text-[10px] text-tertiary">IEEE 519 Compliant</div>
+                </div>
+                <div class="bg-surface-container p-3 border border-outline-variant">
+                  <div class="text-outline text-[10px] uppercase">REACTIVE POWER (Q)</div>
+                  <div class="text-primary font-bold text-[18px] mt-1">0.42 kVAR</div>
+                  <div class="text-[10px] text-outline">Inductive compensation ok</div>
+                </div>
+                <div class="bg-surface-container p-3 border border-outline-variant">
+                  <div class="text-outline text-[10px] uppercase">FREQUENCY STABILITY</div>
+                  <div class="text-on-surface font-bold text-[18px] mt-1">59.98 Hz</div>
+                  <div class="text-[10px] text-tertiary">Δf = -0.02 Hz (Nominal)</div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ========================================================================= -->
+        <!-- VIEW 05: SYSTEM DIAGNOSTICS & OFFICIAL VALIDATED BENCHMARK -->
+        <!-- ========================================================================= -->
+        <div id="view-05" class="view-panel hidden flex flex-col gap-6">
+          <div class="bg-surface-container p-4 border border-outline-variant flex items-center justify-between">
+            <div>
+              <div class="font-headline-sm text-[16px] uppercase font-bold text-on-surface">OFFICIAL VALIDATED BENCHMARK & SYSTEM DIAGNOSTICS</div>
+              <div class="font-label-dense text-[10px] text-tertiary font-bold tracking-wider">CANONICAL 6-FOLD LOHO-CV EVALUATION ACROSS COMPLETE MULTI-WEEK HOUSE RECORDINGS</div>
+            </div>
+            <span class="px-3 py-1 bg-surface-container-lowest border border-primary text-primary text-[11px] font-bold uppercase">
+              OFFICIAL RESEARCH BENCHMARK
+            </span>
+          </div>
+
+          <!-- Benchmark Scope Notice -->
+          <div class="bg-surface-container-lowest border border-tertiary/40 p-4 font-code-stream text-[12px] flex flex-col gap-2">
+            <div class="flex items-center gap-2 text-tertiary font-bold uppercase text-[11px]">
+              <span class="material-symbols-outlined text-[16px]">verified</span>
+              OFFICIAL BENCHMARK DATASET SCOPE & DISAGGREGATION CONTEXT
+            </div>
+            <div class="text-on-surface-variant text-[11px] leading-relaxed">
+              The metrics in this scorecard represent the <span class="text-on-surface font-bold">official validated results</span> computed across the <span class="text-on-surface font-bold">complete longitudinal test periods</span> of each house in REDD (337,125 to 645,086 samples per house, spanning 23 to 45 days of continuous monitoring). This is the definitive research standard for the project.
+            </div>
+            <div class="text-outline text-[11px] border-t border-outline-variant/60 pt-2">
+              <span class="text-secondary font-bold">DISTINCTION FROM LIVE OSCILLOSCOPE VIEW:</span> The <span class="text-on-surface font-bold">01 Live Disaggregation</span> tab streams short 20,000-sample snippets (~33.3 hours, ~3–6% of the recording) for interactive UI demonstration. Because rare appliances (e.g. microwaves, dishwashers, washing machines) activate sparsely in short 33-hour slices, per-feeder live demo metrics naturally vary and must <span class="text-on-surface font-bold">not</span> be confused with or treated as cross-checks of these official multi-week benchmark numbers.
+            </div>
+          </div>
+
+          <!-- Neural Network Architecture Blueprint -->
+          <div class="bg-surface-container-lowest border border-outline-variant p-5 flex flex-col gap-4">
+            <div class="border-b border-outline-variant pb-2 font-headline-sm text-[14px] uppercase font-bold text-primary">
+              MODEL BLUEPRINT: MultiApplianceNILM (T-CNN + Bi-LSTM)
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 font-code-stream text-[12px]">
+              <div class="bg-surface-container p-3 border border-outline-variant">
+                <div class="text-outline text-[10px] uppercase">CONV1D FRONT-END</div>
+                <div class="text-on-surface font-bold text-[14px] mt-1">Kernel 10, Filters 30</div>
+                <div class="text-[10px] text-outline">Local Feature Induction</div>
+              </div>
+              <div class="bg-surface-container p-3 border border-outline-variant">
+                <div class="text-outline text-[10px] uppercase">BIDIRECTIONAL LSTM</div>
+                <div class="text-secondary font-bold text-[14px] mt-1">128 Hidden, 2 Layers</div>
+                <div class="text-[10px] text-outline">599 Steps (~60 min) Field</div>
+              </div>
+              <div class="bg-surface-container p-3 border border-outline-variant">
+                <div class="text-outline text-[10px] uppercase">LOSS FORMULATION</div>
+                <div class="text-tertiary font-bold text-[14px] mt-1">Decoupled Ungated</div>
+                <div class="text-[10px] text-tertiary">MSE Reg + BCE On-Weights</div>
+              </div>
+              <div class="bg-surface-container p-3 border border-outline-variant">
+                <div class="text-outline text-[10px] uppercase">PARAMETER COUNT</div>
+                <div class="text-primary font-bold text-[14px] mt-1">526,347 Weights</div>
+                <div class="text-[10px] text-outline">FP32: 2.01 MB (Ckpt: 6.08 MB)</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 6-Fold LOHO-CV Benchmark Matrix Table -->
+          <div class="bg-surface-container-lowest border border-outline-variant">
+            <div class="p-3 bg-surface-container border-b border-outline-variant font-code-stream text-[12px] font-bold uppercase text-on-surface flex justify-between items-center">
+              <span>OFFICIAL 6-FOLD LOHO-CV BENCHMARK SCORECARD</span>
+              <span class="text-tertiary text-[10px] font-bold">FULL MULTI-WEEK TEST PERIODS</span>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left font-code-stream text-[12px] border-collapse">
+                <thead>
+                  <tr class="border-b border-outline-variant text-outline text-[11px] uppercase bg-surface-container-low">
+                    <th class="p-3">Appliance</th>
+                    <th class="p-3">Precision</th>
+                    <th class="p-3">Recall</th>
+                    <th class="p-3 text-right">Aggregate F1</th>
+                    <th class="p-3 text-right">Oracle Ceiling F1</th>
+                    <th class="p-3">Deployment Calibration Strategy</th>
+                    <th class="p-3">Operational Status</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-outline-variant">
+                  <tr class="hover:bg-surface-container/50">
+                    <td class="p-3 font-bold text-[#00f0ff]">Refrigerator</td>
+                    <td class="p-3">0.441</td>
+                    <td class="p-3">0.534</td>
+                    <td class="p-3 text-right font-bold text-[#00f0ff] text-[14px]">0.4697</td>
+                    <td class="p-3 text-right text-outline">0.4827</td>
+                    <td class="p-3 text-tertiary font-bold">24h Chronological Few-Shot (τ*≈0.20)</td>
+                    <td class="p-3"><span class="px-2 py-0.5 bg-tertiary-container text-on-tertiary-container text-[10px] font-bold">OPTIMAL</span></td>
+                  </tr>
+                  <tr class="hover:bg-surface-container/50">
+                    <td class="p-3 font-bold text-primary">Dishwasher</td>
+                    <td class="p-3">0.162</td>
+                    <td class="p-3">0.210</td>
+                    <td class="p-3 text-right font-bold text-primary text-[14px]">0.1779</td>
+                    <td class="p-3 text-right text-outline">0.2015</td>
+                    <td class="p-3 text-outline">Fixed Decision Threshold (τ=0.50)</td>
+                    <td class="p-3"><span class="px-2 py-0.5 bg-surface-container text-secondary text-[10px] font-bold">VALIDATED_CROSS_HOUSEHOLD</span></td>
+                  </tr>
+                  <tr class="hover:bg-surface-container/50">
+                    <td class="p-3 font-bold text-[#ffaa00]">Microwave</td>
+                    <td class="p-3">0.386</td>
+                    <td class="p-3">0.428</td>
+                    <td class="p-3 text-right font-bold text-[#ffaa00] text-[14px]">0.3986</td>
+                    <td class="p-3 text-right text-outline">0.4120</td>
+                    <td class="p-3 text-outline">Fixed Decision Threshold (τ=0.50)</td>
+                    <td class="p-3"><span class="px-2 py-0.5 bg-surface-container text-secondary text-[10px] font-bold">VALIDATED_CROSS_HOUSEHOLD</span></td>
+                  </tr>
+                  <tr class="hover:bg-surface-container/50">
+                    <td class="p-3 font-bold text-[#00ff66]">Washing Machine</td>
+                    <td class="p-3">0.225</td>
+                    <td class="p-3">0.258</td>
+                    <td class="p-3 text-right font-bold text-[#00ff66] text-[14px]">0.2334</td>
+                    <td class="p-3 text-right text-outline">0.2450</td>
+                    <td class="p-3 text-outline">Fixed Decision Threshold (τ=0.50)</td>
+                    <td class="p-3"><span class="px-2 py-0.5 bg-surface-container text-secondary text-[10px] font-bold">VALIDATED_CROSS_HOUSEHOLD</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- FEEDER SELECTION MODAL -->
+  <div id="feeder-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-surface border border-outline-variant w-full max-w-xl p-6 flex flex-col gap-4">
+      <div class="flex items-center justify-between border-b border-outline-variant pb-3">
+        <div>
+          <div class="font-headline-sm text-[16px] uppercase font-bold text-primary">SELECT SUB-PANEL FEEDER</div>
+          <div class="font-label-dense text-[10px] text-outline mt-0.5">INTERACTIVE DEMO SNIPPETS (20,000 SAMPLES = ~33.3 HOURS EACH)</div>
+        </div>
+        <button id="btn-close-feeder-modal" class="text-on-surface-variant hover:text-on-surface">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="p-2.5 bg-surface-container-low border border-outline-variant font-code-stream text-[11px] text-outline">
+        <span class="text-secondary font-bold">STREAM NOTICE:</span> Each feeder streams a 20,000-sample chronological snippet (~3–6% of total house data) through its respective held-out model checkpoint for real-time oscilloscope visualization. These short slices illustrate inference behavior and are not the official full-period benchmark metrics (see Diagnostics tab).
+      </div>
+      <div class="flex flex-col gap-2" id="feeders-list-container">
+        <!-- Injected via JavaScript -->
+      </div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT STREAMING & TELEMETRY CONTROLLER -->
+  <script>
+    (function() {
+      // Elements
+      const btnPlay = document.getElementById('btn-play');
+      const btnPause = document.getElementById('btn-pause');
+      const btnReset = document.getElementById('btn-reset');
+      const scrubberTrack = document.getElementById('scrubber-track');
+      const scrubberFill = document.getElementById('scrubber-fill');
+      const scrubberNeedle = document.getElementById('scrubber-needle');
+      const timelineTimestamp = document.getElementById('timeline-timestamp');
+      const topUtcTime = document.getElementById('top-utc-time');
+      const btnExport = document.getElementById('btn-export-telemetry');
+      const feederModal = document.getElementById('feeder-modal');
+      const btnFeederModal = document.getElementById('btn-feeder-modal');
+      const btnCloseFeederModal = document.getElementById('btn-close-feeder-modal');
+      const feedersListContainer = document.getElementById('feeders-list-container');
+
+      // Topbar meters
+      const meterVrms = document.getElementById('meter-vrms');
+      const meterIrms = document.getElementById('meter-irms');
+      const meterFreq = document.getElementById('meter-freq');
+      const meterPwr = document.getElementById('meter-pwr');
+      const topFeederTitle = document.getElementById('top-feeder-title');
+      const topFeederDesc = document.getElementById('top-feeder-desc');
+
+      // Appliance badges & readouts
+      const wattsFridge = document.getElementById('watts-fridge');
+      const badgeFridge = document.getElementById('badge-fridge');
+      const substateFridge = document.getElementById('substate-fridge');
+      const confFridge = document.getElementById('conf-fridge');
+
+      const wattsDish = document.getElementById('watts-dishwasher');
+      const badgeDish = document.getElementById('badge-dishwasher');
+      const substateDish = document.getElementById('substate-dishwasher');
+      const confDish = document.getElementById('conf-dishwasher');
+
+      const wattsMicro = document.getElementById('watts-microwave');
+      const badgeMicro = document.getElementById('badge-microwave');
+      const substateMicro = document.getElementById('substate-microwave');
+      const confMicro = document.getElementById('conf-microwave');
+
+      const wattsWash = document.getElementById('watts-washer');
+      const badgeWash = document.getElementById('badge-washer');
+      const substateWash = document.getElementById('substate-washer');
+      const confWash = document.getElementById('conf-washer');
+
+      const wattsTotalActive = document.getElementById('watts-total-active');
+      const ampsTotalActive = document.getElementById('amps-total-active');
+      const badgeActiveCount = document.getElementById('badge-active-count');
+      const labelResidual = document.getElementById('label-residual');
+      const labelSnr = document.getElementById('label-snr');
+
+      // Footer
+      const footerInference = document.getElementById('footer-inference');
+      const footerResidual = document.getElementById('footer-residual');
+      const footerExpvar = document.getElementById('footer-expvar');
+      const scopePaggReadout = document.getElementById('scope-pagg-readout');
+      const scopeLoadCount = document.getElementById('scope-load-count');
+
+      // Scope labels
+      const scopeValFridge = document.getElementById('scope-val-fridge');
+      const scopeValDish = document.getElementById('scope-val-dishwasher');
+      const scopeValMicro = document.getElementById('scope-val-microwave');
+      const scopeValWash = document.getElementById('scope-val-washer');
+
+      // Canvases
+      const canvasMains = document.getElementById('scope-mains');
+      const canvasFridge = document.getElementById('scope-fridge');
+      const canvasDish = document.getElementById('scope-dishwasher');
+      const canvasMicro = document.getElementById('scope-microwave');
+      const canvasWash = document.getElementById('scope-washer');
+
+      let currentData = null;
+      let ws = null;
+      let isPlaying = true;
+      let currentSpeed = 1.0;
+
+      // -------------------------------------------------------------
+      // Tab Navigation
+      // -------------------------------------------------------------
+      const navButtons = document.querySelectorAll('.nav-tab');
+      const viewPanels = document.querySelectorAll('.view-panel');
+
+      navButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const targetViewId = btn.getAttribute('data-view');
+          
+          navButtons.forEach(b => {
+            b.className = "nav-tab flex items-center justify-between px-3 py-2.5 border border-transparent text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface text-left transition-colors w-full";
+            const num = b.querySelector('.font-label-dense');
+            if (num) num.className = "font-label-dense text-[10px] text-outline";
+          });
+
+          btn.className = "nav-tab flex items-center justify-between px-3 py-2.5 bg-primary-container text-on-primary-container font-bold border border-primary-container text-left transition-colors w-full";
+          const activeNum = btn.querySelector('.font-label-dense');
+          if (activeNum) activeNum.className = "font-label-dense text-[10px] text-on-primary-container opacity-80";
+
+          viewPanels.forEach(p => p.classList.add('hidden'));
+          const targetPanel = document.getElementById(targetViewId);
+          if (targetPanel) targetPanel.classList.remove('hidden');
+
+          if (targetViewId === 'view-02') loadUsageCost();
+          if (targetViewId === 'view-03') loadSignatures();
+        });
+      });
+
+      // -------------------------------------------------------------
+      // WebSocket Streaming
+      // -------------------------------------------------------------
+      function connectWebSocket() {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}/ws/telemetry`;
+        ws = new WebSocket(wsUrl);
+
+        ws.onopen = () => {
+          console.log('[NILM] WebSocket connected.');
+        };
+
+        ws.onmessage = (event) => {
+          try {
+            const packet = JSON.parse(event.data);
+            handleTelemetryPacket(packet);
+          } catch (e) {
+            console.error('Error parsing packet:', e);
+          }
+        };
+
+        ws.onclose = () => {
+          console.log('[NILM] WebSocket closed. Reconnecting in 1.5s...');
+          setTimeout(connectWebSocket, 1500);
+        };
+
+        ws.onerror = (err) => {
+          console.warn('[NILM] WebSocket error, polling fallback active.', err);
+        };
+      }
+
+      // Fallback Polling if WS not supported or local file preview
+      setInterval(() => {
+        if (!ws || ws.readyState !== WebSocket.OPEN) {
+          fetch('/api/status')
+            .then(res => res.json())
+            .then(packet => handleTelemetryPacket(packet))
+            .catch(() => {});
+        }
+      }, 200);
+
+      // -------------------------------------------------------------
+      // Update UI with Telemetry
+      // -------------------------------------------------------------
+      function handleTelemetryPacket(d) {
+        currentData = d;
+        isPlaying = d.transport.is_playing;
+        currentSpeed = d.transport.speed;
+
+        // Topbar
+        meterVrms.textContent = `${d.electrical.voltage_rms} V`;
+        meterIrms.textContent = `${d.electrical.current_rms} A`;
+        meterFreq.textContent = `${d.electrical.frequency} Hz`;
+        meterPwr.textContent = `${(d.electrical.mains_watts / 1000).toFixed(2)} kW`;
+        topUtcTime.textContent = d.transport.timestamp;
+        timelineTimestamp.textContent = d.transport.timestamp;
+
+        // Scrubber
+        const pct = d.transport.progress_pct;
+        scrubberFill.style.width = `${pct}%`;
+        scrubberNeedle.style.left = `${pct}%`;
+
+        // Appliances
+        const r = d.appliances.refrigerator;
+        wattsFridge.textContent = Math.round(r.watts).toLocaleString();
+        confFridge.textContent = `${r.confidence_pct}%`;
+        substateFridge.textContent = r.substate;
+        badgeFridge.textContent = r.active ? 'ACTIVE' : 'STANDBY';
+        badgeFridge.className = r.active ? 'bg-[#00f0ff] text-[#090a0f] font-label-dense text-[10px] font-bold px-2 py-0.5' : 'border border-outline-variant text-outline font-label-dense text-[10px] px-2 py-0.5';
+
+        const dw = d.appliances.dishwasher;
+        wattsDish.textContent = Math.round(dw.watts).toLocaleString();
+        confDish.textContent = `${dw.confidence_pct}%`;
+        substateDish.textContent = dw.substate;
+        badgeDish.textContent = dw.active ? 'ACTIVE' : 'STANDBY';
+        badgeDish.className = dw.active ? 'bg-primary text-on-primary font-label-dense text-[10px] font-bold px-2 py-0.5' : 'border border-outline-variant text-outline font-label-dense text-[10px] px-2 py-0.5';
+
+        const m = d.appliances.microwave;
+        wattsMicro.textContent = Math.round(m.watts).toLocaleString();
+        confMicro.textContent = `${m.confidence_pct}%`;
+        substateMicro.textContent = m.substate;
+        badgeMicro.textContent = m.active ? 'ACTIVE' : 'STANDBY';
+        badgeMicro.className = m.active ? 'bg-[#ffaa00] text-[#090a0f] font-label-dense text-[10px] font-bold px-2 py-0.5' : 'border border-outline-variant text-outline font-label-dense text-[10px] px-2 py-0.5';
+
+        const w = d.appliances.washing_machine;
+        wattsWash.textContent = (w.watts < 10 ? w.watts.toFixed(1) : Math.round(w.watts)).toLocaleString();
+        confWash.textContent = `${w.confidence_pct}%`;
+        substateWash.textContent = w.substate;
+        badgeWash.textContent = w.active ? 'ACTIVE' : 'STANDBY';
+        badgeWash.className = w.active ? 'bg-[#00ff66] text-[#090a0f] font-label-dense text-[10px] font-bold px-2 py-0.5' : 'border border-outline-variant text-outline font-label-dense text-[10px] px-2 py-0.5';
+
+        // Total active
+        wattsTotalActive.textContent = d.telemetry.total_active_load.toLocaleString();
+        ampsTotalActive.textContent = `${d.telemetry.total_active_current}A`;
+        badgeActiveCount.textContent = `${d.telemetry.active_loads_count} LOADS`;
+        labelResidual.textContent = `Residual: ${d.telemetry.residual_watts}W`;
+        labelSnr.textContent = `SNR: ${d.telemetry.snr_db}dB`;
+
+        // Footer & Readouts
+        footerInference.textContent = `${d.telemetry.inference_ms}ms`;
+        footerResidual.textContent = `${d.telemetry.residual_watts} W`;
+        footerExpvar.textContent = `${d.telemetry.explained_var_pct}%`;
+        scopePaggReadout.textContent = `P_AGG: ${d.electrical.mains_watts.toLocaleString()} W`;
+        scopeLoadCount.textContent = `${d.telemetry.active_loads_count} LOADS ENERGIZED`;
+
+        scopeValFridge.textContent = `${Math.round(r.watts)} W`;
+        scopeValDish.textContent = `${Math.round(dw.watts)} W`;
+        scopeValMicro.textContent = `${Math.round(m.watts)} W`;
+        scopeValWash.textContent = `${Math.round(w.watts)} W`;
+
+        // Update Oscilloscope Waveforms
+        drawOscilloscopes(d.oscilloscope);
+      }
+
+      // -------------------------------------------------------------
+      // Oscilloscope Canvas Rendering
+      // -------------------------------------------------------------
+      function drawWaveform(canvas, data, strokeColor, maxY, glowColor) {
+        if (!canvas) return;
+        const rect = canvas.getBoundingClientRect();
+        if (canvas.width !== rect.width || canvas.height !== rect.height) {
+          canvas.width = rect.width;
+          canvas.height = rect.height;
+        }
+
+        const ctx = canvas.getContext('2d');
+        const w = canvas.width;
+        const h = canvas.height;
+
+        ctx.clearRect(0, 0, w, h);
+
+        // Grid lines
+        ctx.strokeStyle = '#161b2a';
+        ctx.lineWidth = 0.75;
+        const gridCols = 8;
+        const gridRows = 4;
+        for (let i = 1; i < gridCols; i++) {
+          const x = (w / gridCols) * i;
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, h);
+          ctx.stroke();
+        }
+        for (let j = 1; j < gridRows; j++) {
+          const y = (h / gridRows) * j;
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(w, y);
+          ctx.stroke();
+        }
+
+        if (!data || data.length < 2) return;
+
+        // Waveform Path
+        ctx.save();
+        ctx.strokeStyle = strokeColor;
+        ctx.lineWidth = 1.75;
+        ctx.lineJoin = 'round';
+        ctx.shadowColor = glowColor || strokeColor;
+        ctx.shadowBlur = 6;
+
+        ctx.beginPath();
+        const step = w / (data.length - 1);
+        for (let i = 0; i < data.length; i++) {
+          const val = Math.max(0, Math.min(maxY, data[i]));
+          const x = i * step;
+          const y = h - (val / maxY) * (h * 0.9) - (h * 0.05);
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+        ctx.restore();
+
+        // Glowing live sweep marker at latest point
+        const lastX = w;
+        const lastVal = Math.max(0, Math.min(maxY, data[data.length - 1]));
+        const lastY = h - (lastVal / maxY) * (h * 0.9) - (h * 0.05);
+
+        ctx.save();
+        ctx.fillStyle = '#00ff66';
+        ctx.shadowColor = '#00ff66';
+        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.arc(lastX - 2, lastY, 3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      function drawOscilloscopes(scope) {
+        if (!scope) return;
+        drawWaveform(canvasMains, scope.mains, '#e2e8f0', 4000, 'rgba(226, 232, 240, 0.8)');
+        drawWaveform(canvasFridge, scope.fridge, '#00f0ff', 400, 'rgba(0, 240, 255, 0.8)');
+        drawWaveform(canvasDish, scope.dishwasher, '#ff007a', 2500, 'rgba(255, 0, 122, 0.8)');
+        drawWaveform(canvasMicro, scope.microwave, '#ffaa00', 2000, 'rgba(255, 170, 0, 0.8)');
+        drawWaveform(canvasWash, scope.washing_machine, '#00ff66', 2000, 'rgba(0, 255, 102, 0.8)');
+      }
+
+      // -------------------------------------------------------------
+      // Transport Action Triggers
+      // -------------------------------------------------------------
+      function sendControl(action, payload = {}) {
+        const body = { action, ...payload };
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify(body));
+        } else {
+          fetch('/api/control', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+          });
+        }
+      }
+
+      btnPlay.addEventListener('click', () => {
+        sendControl('play');
+        btnPlay.className = "px-4 py-2 bg-tertiary-container border border-tertiary-container text-on-tertiary-container font-code-stream text-[12px] uppercase tracking-wider font-bold transition-none flex items-center gap-2";
+        btnPlay.innerHTML = '<span class="material-symbols-outlined text-[16px]">play_arrow</span> PLAYING [LIVE]';
+        btnPause.className = "px-4 py-2 bg-surface-container border border-outline-variant text-on-surface-variant font-code-stream text-[12px] uppercase tracking-wider hover:text-on-surface transition-none flex items-center gap-2";
+      });
+
+      btnPause.addEventListener('click', () => {
+        sendControl('pause');
+        btnPause.className = "px-4 py-2 bg-primary-container border border-primary-container text-on-primary-container font-code-stream text-[12px] uppercase tracking-wider font-bold transition-none flex items-center gap-2";
+        btnPlay.className = "px-4 py-2 bg-surface-container border border-outline-variant text-on-surface-variant font-code-stream text-[12px] uppercase tracking-wider hover:text-on-surface transition-none flex items-center gap-2";
+        btnPlay.innerHTML = '<span class="material-symbols-outlined text-[16px]">play_arrow</span> PLAY';
+      });
+
+      btnReset.addEventListener('click', () => {
+        sendControl('reset');
+      });
+
+      // Speed Buttons
+      document.querySelectorAll('.btn-speed').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const spd = parseFloat(btn.getAttribute('data-speed'));
+          sendControl('speed', { speed: spd });
+          document.querySelectorAll('.btn-speed').forEach(b => {
+            b.className = "btn-speed px-2.5 py-1 text-on-surface-variant hover:text-on-surface border-r border-outline-variant";
+          });
+          btn.className = "btn-speed px-2.5 py-1 bg-secondary-fixed text-on-secondary-fixed font-bold border-r border-outline-variant";
+        });
+      });
+
+      // Scrubber Track Click Seek
+      scrubberTrack.addEventListener('click', (e) => {
+        const rect = scrubberTrack.getBoundingClientRect();
+        const clickX = e.clientX - rect.left;
+        const pct = Math.max(0, Math.min(100, (clickX / rect.width) * 100));
+        sendControl('seek', { percent: pct });
+      });
+
+      // Export CSV
+      btnExport.addEventListener('click', () => {
+        window.location.href = '/api/export';
+      });
+
+      // -------------------------------------------------------------
+      // Feeder Selection Modal
+      // -------------------------------------------------------------
+      btnFeederModal.addEventListener('click', () => {
+        fetch('/api/feeders')
+          .then(r => r.json())
+          .then(data => {
+            feedersListContainer.innerHTML = '';
+            data.feeders.forEach(f => {
+              const item = document.createElement('div');
+              item.className = `p-3 border cursor-pointer flex justify-between items-center ${f.active ? 'bg-primary-container/20 border-primary text-primary font-bold' : 'bg-surface-container border-outline-variant hover:bg-surface-container-high'}`;
+              item.innerHTML = `
+                <div>
+                  <div class="font-bold text-[13px]">${f.name}</div>
+                  <div class="text-[11px] text-outline">Feeder ID: ${f.id} (House ${f.house_id}) • 20,000-sample Snippet (~33.3h) • Model: Held-Out Fold ${f.house_id} Ckpt</div>
+                </div>
+                ${f.active ? '<span class="text-tertiary font-bold text-[11px]">ACTIVE</span>' : '<button class="px-3 py-1 bg-surface-container-lowest border border-outline-variant text-[11px] uppercase">SWITCH</button>'}
+              `;
+              item.addEventListener('click', () => {
+                sendControl('feeder', { feeder_id: f.id });
+                topFeederTitle.textContent = `FEEDER #${f.house_id.toString().padStart(2, '0')}`;
+                topFeederDesc.textContent = `- ${f.name.split('-')[1] || ''}`;
+                feederModal.classList.add('hidden');
+              });
+              feedersListContainer.appendChild(item);
+            });
+            feederModal.classList.remove('hidden');
+          });
+      });
+
+      btnCloseFeederModal.addEventListener('click', () => {
+        feederModal.classList.add('hidden');
+      });
+
+      // -------------------------------------------------------------
+      // View 02: Usage & Cost Data Loader
+      // -------------------------------------------------------------
+      const tariffInput = document.getElementById('tariff-input');
+      const btnUpdateTariff = document.getElementById('btn-update-tariff');
+      const tbodyUsageCost = document.getElementById('tbody-usage-cost');
+      const costDailyKwh = document.getElementById('cost-daily-kwh');
+      const costDailyVal = document.getElementById('cost-daily-val');
+      const costWeeklyKwh = document.getElementById('cost-weekly-kwh');
+      const costWeeklyVal = document.getElementById('cost-weekly-val');
+      const costProgressBar = document.getElementById('cost-progress-bar');
+
+      function loadUsageCost() {
+        const tariff = parseFloat(tariffInput.value) || 0.15;
+        fetch(`/api/usage-cost?tariff=${tariff}`)
+          .then(r => r.json())
+          .then(res => {
+            costDailyKwh.textContent = res.daily_total_kwh.toFixed(2);
+            costDailyVal.textContent = `$${res.daily_total_cost.toFixed(2)}`;
+            costWeeklyKwh.textContent = res.weekly_total_kwh.toFixed(2);
+            costWeeklyVal.textContent = `Est: $${res.weekly_total_cost.toFixed(2)}`;
+
+            tbodyUsageCost.innerHTML = '';
+            costProgressBar.innerHTML = '';
+
+            res.appliances.forEach(a => {
+              const tr = document.createElement('tr');
+              tr.className = "hover:bg-surface-container/50";
+              tr.innerHTML = `
+                <td class="p-3 font-bold" style="color: ${a.color};">${a.channel} // ${a.name}</td>
+                <td class="p-3 text-outline">${a.type}</td>
+                <td class="p-3 text-right font-bold">${a.daily_kwh}</td>
+                <td class="p-3 text-right font-bold text-tertiary">$${a.daily_cost.toFixed(2)}</td>
+                <td class="p-3 text-right">${a.weekly_kwh}</td>
+                <td class="p-3 text-right text-tertiary">$${a.weekly_cost.toFixed(2)}</td>
+                <td class="p-3 text-right font-bold" style="color: ${a.color};">${a.share_pct}%</td>
+              `;
+              tbodyUsageCost.appendChild(tr);
+
+              const seg = document.createElement('div');
+              seg.style.width = `${a.share_pct}%`;
+              seg.style.backgroundColor = a.color;
+              seg.className = "h-full";
+              seg.title = `${a.name}: ${a.share_pct}%`;
+              costProgressBar.appendChild(seg);
+            });
+          });
+      }
+
+      btnUpdateTariff.addEventListener('click', loadUsageCost);
+
+      // -------------------------------------------------------------
+      // View 03: Signatures Data Loader
+      // -------------------------------------------------------------
+      const sigsContainer = document.getElementById('signatures-container');
+      function loadSignatures() {
+        fetch('/api/signatures')
+          .then(r => r.json())
+          .then(res => {
+            sigsContainer.innerHTML = '';
+            res.signatures.forEach(sig => {
+              const card = document.createElement('div');
+              card.className = "bg-surface-container-lowest border border-outline-variant p-5 flex flex-col gap-4";
+              
+              // Build SVG points
+              const pts = sig.waveform_sample;
+              const maxP = Math.max(...pts) || 1;
+              const w = 400, h = 90;
+              const step = w / (pts.length - 1);
+              let pathD = '';
+              for (let i = 0; i < pts.length; i++) {
+                const x = i * step;
+                const y = h - (pts[i] / maxP) * (h * 0.8) - 10;
+                pathD += (i === 0 ? `M ${x} ${y}` : ` L ${x} ${y}`);
+              }
+
+              card.innerHTML = `
+                <div class="flex justify-between items-center border-b border-outline-variant pb-2">
+                  <span class="font-headline-sm text-[14px] font-bold" style="color: ${sig.color};">${sig.name.toUpperCase()}</span>
+                  <span class="text-outline text-[11px]">${sig.rated_power}</span>
+                </div>
+                <div class="relative h-24 bg-[#090a0f] border border-outline-variant/60 overflow-hidden">
+                  <svg class="w-full h-full" preserveAspectRatio="none" viewBox="0 0 400 90">
+                    <path d="${pathD}" fill="none" stroke="${sig.color}" stroke-width="2" stroke-linejoin="round" />
+                  </svg>
+                  <div class="absolute right-2 bottom-1 font-label-dense text-[9px] text-outline">PULSE SIGNATURE</div>
+                </div>
+                <div class="grid grid-cols-2 gap-2 text-[11px] text-outline">
+                  <div>INRUSH: <span class="text-on-surface font-bold">${sig.inrush_current}</span></div>
+                  <div>DUTY: <span class="text-on-surface font-bold">${sig.duty_cycle}</span></div>
+                  <div>POWER FACTOR: <span class="text-on-surface font-bold">${sig.power_factor}</span></div>
+                  <div>HARMONICS: <span class="text-on-surface font-bold">${sig.thd}</span></div>
+                </div>
+                <div class="text-[11px] text-on-surface-variant leading-relaxed border-t border-outline-variant pt-2">
+                  ${sig.description}
+                </div>
+              `;
+              sigsContainer.appendChild(card);
+            });
+          });
+      }
+
+      // Initial Connection
+      connectWebSocket();
+
+    })();
+  </script>
+</body>
+</html>

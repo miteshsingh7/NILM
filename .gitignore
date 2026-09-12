@@ -1,0 +1,64 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+.venv/
+ENV/
+
+# Data and Checkpoints
+data/raw/
+data/processed/*.parquet
+data/processed/redd_*
+data/processed/ukdale_*
+data/processed/house_*
+data/processed/disagg_demo_*
+data/processed/ukdale_pretrained_dataset/
+kaggle_runner/
+kaggle_redd_dataset/
+kaggle_dataset_dir/
+archive/
+
+# Checkpoint rules - ignore all checkpoints except loho_cv_decoupled
+checkpoints/*
+!checkpoints/loho_cv_decoupled
+checkpoints/loho_cv_decoupled/*/latest_checkpoint.pt
+checkpoints_ukdale/
+
+# Other dev folders
+kaggle_kernels/
+pulled_kernel/
+nilm/
+scratch/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints
+
+# Pytest / Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Streamlit
+.streamlit/
+.DS_Store
