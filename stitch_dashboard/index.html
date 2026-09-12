@@ -389,33 +389,64 @@
 
           </div>
 
-          <!-- 3. MAIN AGGREGATE OSCILLOSCOPE -->
+          <!-- 3. MAIN COMPOSITE OSCILLOSCOPE (MAINS & DISAGGREGATED SIGNALS) -->
           <div class="bg-surface-container-lowest border border-outline-variant flex flex-col">
-            <div class="h-10 bg-surface-container px-4 border-b border-outline-variant flex items-center justify-between">
-              <div class="flex items-center gap-4">
+            <div class="py-2.5 bg-surface-container px-4 border-b border-outline-variant flex flex-wrap items-center justify-between gap-3">
+              <div class="flex items-center gap-3">
                 <span class="font-code-stream text-[12px] text-on-surface font-bold uppercase tracking-wider">
-                  MAINS FEED // AGGREGATE ACTIVE POWER (RAW STREAM)
+                  MAINS &amp; DISAGGREGATED SIGNALS // COMPOSITE OSCILLOSCOPE
+                </span>
+                <span class="text-tertiary font-bold text-[10px] font-code-stream flex items-center gap-1.5 bg-tertiary/10 border border-tertiary/30 px-2 py-0.5 rounded-xs">
+                  <span class="w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse"></span> ALL SIGNALS ACTIVE
                 </span>
               </div>
-              <div class="flex items-center gap-4 font-code-stream text-[11px] text-on-surface-variant">
-                <span>SCALE: 500W/DIV</span>
-                <span class="text-tertiary font-bold flex items-center gap-1.5">
-                  <span class="w-2 h-2 rounded-full bg-tertiary animate-pulse"></span> LIVE WAVEFORM
-                </span>
+
+              <!-- Interactive Signal Filter Toggles & Mode Selection -->
+              <div class="flex flex-wrap items-center gap-2 font-code-stream text-[11px]">
+                <!-- Multi-Trace Buttons -->
+                <div class="flex items-center bg-[#090a0f] border border-outline-variant rounded-xs p-0.5 gap-1" id="trace-toggle-group">
+                  <button id="btn-trace-mains" data-trace="mains" title="Toggle Mains (Aggregate)" class="px-2 py-0.5 text-[10px] font-bold rounded-xs transition-all bg-[#e2e8f0]/20 text-[#e2e8f0] border border-[#e2e8f0]/50 flex items-center gap-1.5 cursor-pointer">
+                    <span class="w-2.5 h-0.5 bg-[#e2e8f0] rounded-xs"></span> Mains
+                  </button>
+                  <button id="btn-trace-fridge" data-trace="fridge" title="Toggle Refrigerator" class="px-2 py-0.5 text-[10px] font-bold rounded-xs transition-all bg-[#00f0ff]/20 text-[#00f0ff] border border-[#00f0ff]/50 flex items-center gap-1.5 cursor-pointer">
+                    <span class="w-2.5 h-0.5 bg-[#00f0ff] rounded-xs"></span> Fridge
+                  </button>
+                  <button id="btn-trace-dish" data-trace="dishwasher" title="Toggle Dishwasher" class="px-2 py-0.5 text-[10px] font-bold rounded-xs transition-all bg-[#ff007a]/20 text-[#ff007a] border border-[#ff007a]/50 flex items-center gap-1.5 cursor-pointer">
+                    <span class="w-2.5 h-0.5 bg-[#ff007a] rounded-xs"></span> Dish
+                  </button>
+                  <button id="btn-trace-micro" data-trace="microwave" title="Toggle Microwave" class="px-2 py-0.5 text-[10px] font-bold rounded-xs transition-all bg-[#ffaa00]/20 text-[#ffaa00] border border-[#ffaa00]/50 flex items-center gap-1.5 cursor-pointer">
+                    <span class="w-2.5 h-0.5 bg-[#ffaa00] rounded-xs"></span> Micro
+                  </button>
+                  <button id="btn-trace-wash" data-trace="washing_machine" title="Toggle Washing Machine" class="px-2 py-0.5 text-[10px] font-bold rounded-xs transition-all bg-[#00ff66]/20 text-[#00ff66] border border-[#00ff66]/50 flex items-center gap-1.5 cursor-pointer">
+                    <span class="w-2.5 h-0.5 bg-[#00ff66] rounded-xs"></span> Wash
+                  </button>
+                </div>
+
+                <!-- Display Mode Toggle -->
+                <div class="flex items-center bg-[#090a0f] border border-outline-variant rounded-xs p-0.5 text-[10px]">
+                  <button id="btn-mode-overlay" title="Overlay all signals on common axis" class="px-2.5 py-0.5 font-bold rounded-xs bg-primary text-on-primary cursor-pointer transition-colors">OVERLAY</button>
+                  <button id="btn-mode-stacked" title="Stack signals cumulatively to show decomposition sum" class="px-2.5 py-0.5 font-bold rounded-xs text-outline hover:text-on-surface cursor-pointer transition-colors">STACKED</button>
+                </div>
+
+                <!-- Vertical Scale: Auto vs Fixed 4kW -->
+                <div class="flex items-center bg-[#090a0f] border border-outline-variant rounded-xs p-0.5 text-[10px]">
+                  <button id="btn-scale-auto" title="Auto-scale vertical axis to current peak power" class="px-2.5 py-0.5 font-bold rounded-xs bg-secondary text-on-secondary cursor-pointer transition-colors">AUTO</button>
+                  <button id="btn-scale-fixed" title="Fixed 4,000W full-scale laboratory reference" class="px-2.5 py-0.5 font-bold rounded-xs text-outline hover:text-on-surface cursor-pointer transition-colors">4kW</button>
+                </div>
               </div>
             </div>
 
             <!-- Oscilloscope Display Canvas -->
-            <div class="relative w-full h-64 bg-[#090a0f] overflow-hidden">
+            <div class="relative w-full h-72 bg-[#090a0f] overflow-hidden">
               <canvas id="scope-mains" class="w-full h-full block"></canvas>
               
               <!-- Scale Labels -->
               <div class="absolute left-3 top-3 bottom-3 flex flex-col justify-between font-code-stream text-[10px] text-outline pointer-events-none select-none z-10">
-                <span>4000W</span>
-                <span>3000W</span>
-                <span>2000W</span>
-                <span>1000W</span>
-                <span>0W</span>
+                <span id="scope-scale-4">4000W</span>
+                <span id="scope-scale-3">3000W</span>
+                <span id="scope-scale-2">2000W</span>
+                <span id="scope-scale-1">1000W</span>
+                <span id="scope-scale-0">0W</span>
               </div>
               <div class="absolute right-3 bottom-2 flex gap-8 font-code-stream text-[10px] text-outline pointer-events-none select-none z-10">
                 <span>-50s</span>
@@ -426,10 +457,30 @@
                 <span>0s [LIVE]</span>
               </div>
 
-              <!-- Floating Live Cursor Box -->
-              <div class="absolute right-4 top-3 z-20 bg-surface-container-lowest/90 border border-outline-variant px-3 py-1.5 font-code-stream text-[11px] pointer-events-none">
-                <div class="text-on-surface font-bold leading-normal" id="scope-pagg-readout">P_AGG: 3,193.4 W</div>
-                <div class="text-tertiary text-[10px] leading-normal" id="scope-load-count">3 LOADS ENERGIZED</div>
+              <!-- Floating Live Multi-Signal Cursor Box -->
+              <div class="absolute right-4 top-3 z-20 bg-surface-container-lowest/95 border border-outline-variant px-3 py-2 font-code-stream text-[11px] backdrop-blur-sm shadow-xl pointer-events-none rounded-xs">
+                <div class="flex items-center justify-between gap-4 border-b border-outline-variant/60 pb-1.5 mb-1.5">
+                  <span class="text-on-surface font-bold text-[12px]" id="scope-pagg-readout">P_AGG: 3,193.4 W</span>
+                  <span class="text-tertiary text-[10px] font-bold" id="scope-load-count">3 LOADS ENERGIZED</span>
+                </div>
+                <div class="grid grid-cols-2 gap-x-4 gap-y-1 text-[10px]">
+                  <div class="flex items-center justify-between gap-2">
+                    <span class="text-[#00f0ff] flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-[#00f0ff]"></span>Fridge:</span>
+                    <span class="font-bold text-on-surface" id="scope-overlay-fridge">142 W</span>
+                  </div>
+                  <div class="flex items-center justify-between gap-2">
+                    <span class="text-[#ff007a] flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-[#ff007a]"></span>Dishwasher:</span>
+                    <span class="font-bold text-on-surface" id="scope-overlay-dish">1,850 W</span>
+                  </div>
+                  <div class="flex items-center justify-between gap-2">
+                    <span class="text-[#ffaa00] flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-[#ffaa00]"></span>Microwave:</span>
+                    <span class="font-bold text-on-surface" id="scope-overlay-micro">1,200 W</span>
+                  </div>
+                  <div class="flex items-center justify-between gap-2">
+                    <span class="text-[#00ff66] flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-[#00ff66]"></span>Washer:</span>
+                    <span class="font-bold text-on-surface" id="scope-overlay-wash">1.4 W</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -964,6 +1015,104 @@
       const canvasMicro = document.getElementById('scope-microwave');
       const canvasWash = document.getElementById('scope-washer');
 
+      // Composite Multi-Signal Overlay Elements & Toggles
+      const scopeOverlayFridge = document.getElementById('scope-overlay-fridge');
+      const scopeOverlayDish = document.getElementById('scope-overlay-dish');
+      const scopeOverlayMicro = document.getElementById('scope-overlay-micro');
+      const scopeOverlayWash = document.getElementById('scope-overlay-wash');
+
+      const btnModeOverlay = document.getElementById('btn-mode-overlay');
+      const btnModeStacked = document.getElementById('btn-mode-stacked');
+      const traceBtns = {
+        mains: document.getElementById('btn-trace-mains'),
+        fridge: document.getElementById('btn-trace-fridge'),
+        dishwasher: document.getElementById('btn-trace-dish'),
+        microwave: document.getElementById('btn-trace-micro'),
+        washing_machine: document.getElementById('btn-trace-wash'),
+      };
+
+      const traceVisibility = {
+        mains: true,
+        fridge: true,
+        dishwasher: true,
+        microwave: true,
+        washing_machine: true,
+      };
+      let scopeDisplayMode = 'overlay';
+      let lastScopeData = null;
+
+      const traceStyles = {
+        mains: { bg: 'bg-[#e2e8f0]/20', text: 'text-[#e2e8f0]', border: 'border-[#e2e8f0]/50' },
+        fridge: { bg: 'bg-[#00f0ff]/20', text: 'text-[#00f0ff]', border: 'border-[#00f0ff]/50' },
+        dishwasher: { bg: 'bg-[#ff007a]/20', text: 'text-[#ff007a]', border: 'border-[#ff007a]/50' },
+        microwave: { bg: 'bg-[#ffaa00]/20', text: 'text-[#ffaa00]', border: 'border-[#ffaa00]/50' },
+        washing_machine: { bg: 'bg-[#00ff66]/20', text: 'text-[#00ff66]', border: 'border-[#00ff66]/50' },
+      };
+
+      function updateTraceButtons() {
+        for (const [key, btn] of Object.entries(traceBtns)) {
+          if (!btn) continue;
+          const isVisible = traceVisibility[key];
+          const st = traceStyles[key];
+          if (isVisible) {
+            btn.className = `px-2 py-0.5 text-[10px] font-bold rounded-xs transition-all ${st.bg} ${st.text} border ${st.border} flex items-center gap-1.5 cursor-pointer opacity-100`;
+          } else {
+            btn.className = `px-2 py-0.5 text-[10px] font-bold rounded-xs transition-all bg-surface-container border border-outline-variant text-outline flex items-center gap-1.5 cursor-pointer opacity-40`;
+          }
+        }
+      }
+
+      for (const [key, btn] of Object.entries(traceBtns)) {
+        if (btn) {
+          btn.addEventListener('click', () => {
+            traceVisibility[key] = !traceVisibility[key];
+            updateTraceButtons();
+            if (lastScopeData) drawOscilloscopes(lastScopeData);
+          });
+        }
+      }
+
+      if (btnModeOverlay && btnModeStacked) {
+        btnModeOverlay.addEventListener('click', () => {
+          scopeDisplayMode = 'overlay';
+          btnModeOverlay.className = "px-2.5 py-0.5 font-bold rounded-xs bg-primary text-on-primary cursor-pointer transition-colors";
+          btnModeStacked.className = "px-2.5 py-0.5 font-bold rounded-xs text-outline hover:text-on-surface cursor-pointer transition-colors";
+          if (lastScopeData) drawOscilloscopes(lastScopeData);
+        });
+        btnModeStacked.addEventListener('click', () => {
+          scopeDisplayMode = 'stacked';
+          btnModeStacked.className = "px-2.5 py-0.5 font-bold rounded-xs bg-primary text-on-primary cursor-pointer transition-colors";
+          btnModeOverlay.className = "px-2.5 py-0.5 font-bold rounded-xs text-outline hover:text-on-surface cursor-pointer transition-colors";
+          if (lastScopeData) drawOscilloscopes(lastScopeData);
+        });
+      }
+
+      const btnScaleAuto = document.getElementById('btn-scale-auto');
+      const btnScaleFixed = document.getElementById('btn-scale-fixed');
+      const scaleLabels = [
+        document.getElementById('scope-scale-0'),
+        document.getElementById('scope-scale-1'),
+        document.getElementById('scope-scale-2'),
+        document.getElementById('scope-scale-3'),
+        document.getElementById('scope-scale-4'),
+      ];
+      let scopeScaleMode = 'auto'; // 'auto' | 'fixed'
+
+      if (btnScaleAuto && btnScaleFixed) {
+        btnScaleAuto.addEventListener('click', () => {
+          scopeScaleMode = 'auto';
+          btnScaleAuto.className = "px-2.5 py-0.5 font-bold rounded-xs bg-secondary text-on-secondary cursor-pointer transition-colors";
+          btnScaleFixed.className = "px-2.5 py-0.5 font-bold rounded-xs text-outline hover:text-on-surface cursor-pointer transition-colors";
+          if (lastScopeData) drawOscilloscopes(lastScopeData);
+        });
+        btnScaleFixed.addEventListener('click', () => {
+          scopeScaleMode = 'fixed';
+          btnScaleFixed.className = "px-2.5 py-0.5 font-bold rounded-xs bg-secondary text-on-secondary cursor-pointer transition-colors";
+          btnScaleAuto.className = "px-2.5 py-0.5 font-bold rounded-xs text-outline hover:text-on-surface cursor-pointer transition-colors";
+          if (lastScopeData) drawOscilloscopes(lastScopeData);
+        });
+      }
+
       let currentData = null;
       let ws = null;
       let isPlaying = true;
@@ -1109,6 +1258,12 @@
         scopeValMicro.textContent = `${Math.round(m.watts)} W`;
         scopeValWash.textContent = `${Math.round(w.watts)} W`;
 
+        // Update multi-signal live cursor overlay
+        if (scopeOverlayFridge) scopeOverlayFridge.textContent = `${Math.round(r.watts)} W`;
+        if (scopeOverlayDish) scopeOverlayDish.textContent = `${Math.round(dw.watts)} W`;
+        if (scopeOverlayMicro) scopeOverlayMicro.textContent = `${Math.round(m.watts)} W`;
+        if (scopeOverlayWash) scopeOverlayWash.textContent = `${w.watts < 10 ? w.watts.toFixed(1) : Math.round(w.watts)} W`;
+
         // Update Oscilloscope Waveforms
         drawOscilloscopes(d.oscilloscope);
       }
@@ -1116,6 +1271,247 @@
       // -------------------------------------------------------------
       // Oscilloscope Canvas Rendering
       // -------------------------------------------------------------
+      function drawCompositeOscilloscope(canvas, scope) {
+        if (!canvas || !scope) return;
+        const rect = canvas.getBoundingClientRect();
+        if (canvas.width !== rect.width || canvas.height !== rect.height) {
+          canvas.width = rect.width;
+          canvas.height = rect.height;
+        }
+
+        const ctx = canvas.getContext('2d');
+        const w = canvas.width;
+        const h = canvas.height;
+
+        ctx.clearRect(0, 0, w, h);
+
+        // Oscilloscope division grid
+        ctx.strokeStyle = '#141926';
+        ctx.lineWidth = 0.75;
+        const gridCols = 10;
+        const gridRows = 5;
+        for (let i = 1; i < gridCols; i++) {
+          const x = (w / gridCols) * i;
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, h);
+          ctx.stroke();
+        }
+        for (let j = 1; j < gridRows; j++) {
+          const y = (h / gridRows) * j;
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(w, y);
+          ctx.stroke();
+        }
+
+        const n = scope.mains ? scope.mains.length : 0;
+        if (n < 2) return;
+
+        let maxY = 4000;
+        if (scopeScaleMode === 'auto') {
+          let peak = 0;
+          if (scopeDisplayMode === 'stacked') {
+            for (let i = 0; i < n; i++) {
+              let stackSum = 0;
+              for (const k of ['fridge', 'dishwasher', 'microwave', 'washing_machine']) {
+                if (traceVisibility[k] && scope[k]) stackSum += Math.max(0, scope[k][i]);
+              }
+              if (traceVisibility.mains && scope.mains) stackSum = Math.max(stackSum, scope.mains[i]);
+              peak = Math.max(peak, stackSum);
+            }
+          } else {
+            for (let i = 0; i < n; i++) {
+              if (traceVisibility.mains && scope.mains) peak = Math.max(peak, scope.mains[i]);
+              for (const k of ['fridge', 'dishwasher', 'microwave', 'washing_machine']) {
+                if (traceVisibility[k] && scope[k]) peak = Math.max(peak, scope[k][i]);
+              }
+            }
+          }
+          // Scale to comfortable ceiling with headroom
+          maxY = Math.max(400, Math.ceil((peak * 1.25) / 100) * 100);
+        }
+
+        // Update on-screen vertical axis scale labels
+        if (scaleLabels[4]) scaleLabels[4].textContent = `${maxY}W`;
+        if (scaleLabels[3]) scaleLabels[3].textContent = `${Math.round(maxY * 0.75)}W`;
+        if (scaleLabels[2]) scaleLabels[2].textContent = `${Math.round(maxY * 0.50)}W`;
+        if (scaleLabels[1]) scaleLabels[1].textContent = `${Math.round(maxY * 0.25)}W`;
+        if (scaleLabels[0]) scaleLabels[0].textContent = '0W';
+
+        const step = w / (n - 1);
+        const getY = (val) => h - (Math.max(0, Math.min(maxY, val)) / maxY) * (h * 0.9) - (h * 0.05);
+
+        if (scopeDisplayMode === 'stacked') {
+          // STACKED AREA DECOMPOSITION (Appliances stack cumulatively up to Mains)
+          let currentBaseline = new Array(n).fill(0);
+
+          const appliances = [
+            { key: 'fridge', color: '#00f0ff', fill: 'rgba(0, 240, 255, 0.40)' },
+            { key: 'dishwasher', color: '#ff007a', fill: 'rgba(255, 0, 122, 0.40)' },
+            { key: 'microwave', color: '#ffaa00', fill: 'rgba(255, 170, 0, 0.40)' },
+            { key: 'washing_machine', color: '#00ff66', fill: 'rgba(0, 255, 102, 0.40)' }
+          ];
+
+          for (const app of appliances) {
+            if (!traceVisibility[app.key] || !scope[app.key]) continue;
+            const data = scope[app.key];
+            const nextBaseline = [];
+
+            ctx.beginPath();
+            for (let i = 0; i < n; i++) {
+              const topVal = currentBaseline[i] + Math.max(0, data[i]);
+              nextBaseline.push(topVal);
+              const x = i * step;
+              const y = getY(topVal);
+              if (i === 0) ctx.moveTo(x, y);
+              else ctx.lineTo(x, y);
+            }
+            for (let i = n - 1; i >= 0; i--) {
+              const x = i * step;
+              const y = getY(currentBaseline[i]);
+              ctx.lineTo(x, y);
+            }
+            ctx.closePath();
+            ctx.fillStyle = app.fill;
+            ctx.fill();
+
+            // Stroke boundary line
+            ctx.beginPath();
+            for (let i = 0; i < n; i++) {
+              const x = i * step;
+              const y = getY(nextBaseline[i]);
+              if (i === 0) ctx.moveTo(x, y);
+              else ctx.lineTo(x, y);
+            }
+            ctx.strokeStyle = app.color;
+            ctx.lineWidth = 1.6;
+            ctx.stroke();
+
+            currentBaseline = nextBaseline;
+          }
+
+          // Mains envelope on top
+          if (traceVisibility.mains && scope.mains) {
+            ctx.save();
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2.2;
+            ctx.setLineDash([5, 4]);
+            ctx.shadowColor = 'rgba(255, 255, 255, 0.9)';
+            ctx.shadowBlur = 6;
+            ctx.beginPath();
+            for (let i = 0; i < n; i++) {
+              const x = i * step;
+              const y = getY(scope.mains[i]);
+              if (i === 0) ctx.moveTo(x, y);
+              else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+            ctx.restore();
+          }
+        } else {
+          // OVERLAY MODE: All signals plotted on common 0-4000W scale
+          // 1. Draw Mains
+          if (traceVisibility.mains && scope.mains) {
+            ctx.save();
+            const mainsGrad = ctx.createLinearGradient(0, 0, 0, h);
+            mainsGrad.addColorStop(0, 'rgba(226, 232, 240, 0.12)');
+            mainsGrad.addColorStop(1, 'rgba(226, 232, 240, 0.01)');
+
+            ctx.beginPath();
+            for (let i = 0; i < n; i++) {
+              const x = i * step;
+              const y = getY(scope.mains[i]);
+              if (i === 0) ctx.moveTo(x, y);
+              else ctx.lineTo(x, y);
+            }
+            ctx.lineTo(w, getY(0));
+            ctx.lineTo(0, getY(0));
+            ctx.closePath();
+            ctx.fillStyle = mainsGrad;
+            ctx.fill();
+
+            ctx.beginPath();
+            for (let i = 0; i < n; i++) {
+              const x = i * step;
+              const y = getY(scope.mains[i]);
+              if (i === 0) ctx.moveTo(x, y);
+              else ctx.lineTo(x, y);
+            }
+            ctx.strokeStyle = '#e2e8f0';
+            ctx.lineWidth = 2.2;
+            ctx.shadowColor = 'rgba(226, 232, 240, 0.6)';
+            ctx.shadowBlur = 4;
+            ctx.stroke();
+            ctx.restore();
+          }
+
+          // 2. Draw Disaggregated Signals
+          const appliances = [
+            { key: 'washing_machine', color: '#00ff66', glow: 'rgba(0, 255, 102, 0.9)', fill: 'rgba(0, 255, 102, 0.07)' },
+            { key: 'dishwasher', color: '#ff007a', glow: 'rgba(255, 0, 122, 0.9)', fill: 'rgba(255, 0, 122, 0.07)' },
+            { key: 'microwave', color: '#ffaa00', glow: 'rgba(255, 170, 0, 0.9)', fill: 'rgba(255, 170, 0, 0.07)' },
+            { key: 'fridge', color: '#00f0ff', glow: 'rgba(0, 240, 255, 0.9)', fill: 'rgba(0, 240, 255, 0.07)' }
+          ];
+
+          for (const app of appliances) {
+            if (!traceVisibility[app.key] || !scope[app.key]) continue;
+            const data = scope[app.key];
+
+            ctx.save();
+            ctx.beginPath();
+            for (let i = 0; i < n; i++) {
+              const x = i * step;
+              const y = getY(data[i]);
+              if (i === 0) ctx.moveTo(x, y);
+              else ctx.lineTo(x, y);
+            }
+            ctx.lineTo(w, getY(0));
+            ctx.lineTo(0, getY(0));
+            ctx.closePath();
+            ctx.fillStyle = app.fill;
+            ctx.fill();
+
+            ctx.beginPath();
+            for (let i = 0; i < n; i++) {
+              const x = i * step;
+              const y = getY(data[i]);
+              if (i === 0) ctx.moveTo(x, y);
+              else ctx.lineTo(x, y);
+            }
+            ctx.strokeStyle = app.color;
+            ctx.lineWidth = 1.8;
+            ctx.lineJoin = 'round';
+            ctx.shadowColor = app.glow;
+            ctx.shadowBlur = 6;
+            ctx.stroke();
+
+            // Sweep marker
+            const lastVal = data[n - 1];
+            ctx.fillStyle = app.color;
+            ctx.shadowColor = app.color;
+            ctx.shadowBlur = 8;
+            ctx.beginPath();
+            ctx.arc(w - 2, getY(lastVal), 3, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+          }
+        }
+
+        // Live endpoint marker for Mains
+        if (traceVisibility.mains && scope.mains) {
+          const lastVal = scope.mains[n - 1];
+          ctx.save();
+          ctx.fillStyle = '#ffffff';
+          ctx.shadowColor = '#ffffff';
+          ctx.shadowBlur = 10;
+          ctx.beginPath();
+          ctx.arc(w - 2, getY(lastVal), 3.5, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+      }
+
       function drawWaveform(canvas, data, strokeColor, maxY, glowColor) {
         if (!canvas) return;
         const rect = canvas.getBoundingClientRect();
@@ -1189,7 +1585,8 @@
 
       function drawOscilloscopes(scope) {
         if (!scope) return;
-        drawWaveform(canvasMains, scope.mains, '#e2e8f0', 4000, 'rgba(226, 232, 240, 0.8)');
+        lastScopeData = scope;
+        drawCompositeOscilloscope(canvasMains, scope);
         drawWaveform(canvasFridge, scope.fridge, '#00f0ff', 400, 'rgba(0, 240, 255, 0.8)');
         drawWaveform(canvasDish, scope.dishwasher, '#ff007a', 2500, 'rgba(255, 0, 122, 0.8)');
         drawWaveform(canvasMicro, scope.microwave, '#ffaa00', 2000, 'rgba(255, 170, 0, 0.8)');
