@@ -69,6 +69,9 @@ def run_single_fold(
     norm_type: str = "batchnorm",
     model_type: str = "shared",
     lstm_hidden_size: Optional[int] = None,
+    in_channels: int = 1,
+    predict_transitions: bool = False,
+    lambda_transition: float = 0.5,
 ) -> Dict[str, Any]:
     """Runs training and evaluation for a single LOHO-CV fold."""
     ckpt_dir = Path(base_checkpoint_dir) / f"fold_{fold}"
@@ -82,6 +85,9 @@ def run_single_fold(
         checkpoint_dir=str(ckpt_dir),
         norm_type=norm_type,
         model_type=model_type,
+        in_channels=in_channels,
+        predict_transitions=predict_transitions,
+        lambda_transition=lambda_transition,
     )
     if lstm_hidden_size is not None:
         cfg_kwargs["lstm_hidden_size"] = lstm_hidden_size

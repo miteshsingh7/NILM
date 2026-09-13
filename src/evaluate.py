@@ -250,10 +250,18 @@ def run_evaluation(
     state_dict = ckpt["model_state_dict"]
     clean_state_dict = {k[7:] if k.startswith("module.") else k: v for k, v in state_dict.items()}
 
-    # Auto-detect architecture and normalization type from state_dict
+    # Auto-detect architecture, input channels, transition head, and normalization type from state_dict
     is_decoupled = any(k.startswith("lstms.") for k in clean_state_dict)
     has_running_stats = any("running_mean" in k for k in clean_state_dict)
     norm_type = "batchnorm" if has_running_stats else "groupnorm"
+
+    in_channels = 1
+    if "conv1.weight" in clean_state_dict:
+        in_channels = clean_state_dict["conv1.weight"].shape[1]
+    elif "encoder.conv1.weight" in clean_state_dict:
+        in_channels = clean_state_dict["encoder.conv1.weight"].shape[1]
+
+    predict_transitions = any("transition_classifier" in k for k in clean_state_dict)
 
     if is_decoupled:
         lstm_hidden = 48
@@ -263,13 +271,17 @@ def run_evaluation(
                 break
         model = DecoupledTemporalNILM(
             appliances=appliances,
+            in_channels=in_channels,
             lstm_hidden=lstm_hidden,
             norm_type=norm_type,
+            predict_transitions=predict_transitions,
         )
     else:
         model = MultiApplianceNILM(
             appliances=appliances,
+            in_channels=in_channels,
             norm_type=norm_type,
+            predict_transitions=predict_transitions,
         )
     model.load_state_dict(clean_state_dict)
     if device == "cuda" and torch.cuda.device_count() > 1:
@@ -279,7 +291,7 @@ def run_evaluation(
     meta = ckpt.get("metadata") or ckpt.get("extra_metadata") or {}
     if held_out_house is None:
         held_out_house = meta.get("held_out_house", 1)
-    config = NILMConfig(appliances=appliances, device=device, held_out_house=held_out_house)
+    config = NILMConfig(appliances=appliances, in_channels=in_channels, device=device, held_out_house=held_out_house)
 
     is_ukdale = (dataset_type == "ukdale") or (ukdale_dir is not None) or ("ukdale" in checkpoint_path.lower())
     if is_ukdale:

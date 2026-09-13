@@ -45,6 +45,7 @@ class SharedEncoder(nn.Module):
             conv_kernels = [9, 7, 5]
 
         self.norm_type = norm_type
+        self.in_channels = in_channels
 
         # Conv1D layers with padding='same'
         # kernel 9 -> padding 4, kernel 7 -> padding 3, kernel 5 -> padding 2
@@ -89,16 +90,19 @@ class SharedEncoder(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Args:
 
-            x: Aggregate mains window tensor of shape (batch, length, 1) or (batch, 1, length).
+            x: Aggregate mains window tensor of shape (batch, length, in_channels) or (batch, in_channels, length).
 
         Returns:
-            Encoder features of shape (batch, length, 256).
+            Encoder features of shape (batch, length, 2 * lstm_hidden).
         """
         # Ensure shape (batch, channels, length) for Conv1D
         if x.dim() == 2:
             x = x.unsqueeze(1)  # (B, 1, L)
-        elif x.dim() == 3 and x.shape[-1] == 1:
-            x = x.permute(0, 2, 1)  # (B, L, 1) -> (B, 1, L)
+        elif x.dim() == 3:
+            if x.shape[-1] == self.in_channels and x.shape[1] != self.in_channels:
+                x = x.permute(0, 2, 1)  # (B, L, C) -> (B, C, L)
+            elif x.shape[-1] == 1 and x.shape[1] != 1:
+                x = x.permute(0, 2, 1)
 
         out = self.relu1(self.bn1(self.conv1(x)))
         out = self.relu2(self.bn2(self.conv2(out)))
@@ -112,15 +116,18 @@ class SharedEncoder(nn.Module):
 
 
 class ApplianceHead(nn.Module):
-    """Per-appliance disaggregation head with dual regression and on/off branches."""
+    """Per-appliance disaggregation head with dual regression, on/off, and transition branches."""
 
     def __init__(
         self,
         in_features: int = 256,
         conv_filters: int = 64,
         dense_dim: int = 32,
+        predict_transitions: bool = False,
     ):
         super().__init__()
+        self.predict_transitions = predict_transitions
+
         # Conv1D feature extractor
         self.conv = nn.Conv1d(
             in_features,
@@ -134,18 +141,23 @@ class ApplianceHead(nn.Module):
         self.dense = nn.Linear(conv_filters, dense_dim)
         self.relu_dense = nn.ReLU()
 
-        # Dual branches
+        # Dual branches + optional transition branch
         self.power_regressor = nn.Linear(dense_dim, 1)  # Linear activation for normalized power
         self.onoff_classifier = nn.Linear(dense_dim, 1)  # Logits; sigmoid applied in forward
+        if predict_transitions:
+            self.transition_classifier = nn.Linear(dense_dim, 1)
 
-    def forward(self, encoder_features: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+    def forward(
+        self, encoder_features: torch.Tensor
+    ) -> Union[Tuple[torch.Tensor, torch.Tensor], Tuple[torch.Tensor, torch.Tensor, torch.Tensor]]:
         """Args:
 
-            encoder_features: Tensor of shape (batch, length, 256).
+            encoder_features: Tensor of shape (batch, length, in_features).
 
         Returns:
             power_pred: (batch, length, 1) continuous normalized power.
             onoff_pred: (batch, length, 1) on-probability in [0, 1].
+            (optional) trans_pred: (batch, length, 1) transition probability in [0, 1].
         """
         # Permute for Conv1D: (B, L, C) -> (B, C, L)
         h = encoder_features.permute(0, 2, 1)
@@ -158,6 +170,10 @@ class ApplianceHead(nn.Module):
         power_pred = self.power_regressor(h)
         onoff_prob = torch.sigmoid(self.onoff_classifier(h))
 
+        if self.predict_transitions:
+            trans_prob = torch.sigmoid(self.transition_classifier(h))
+            return power_pred, onoff_prob, trans_prob
+
         return power_pred, onoff_prob
 
 
@@ -166,7 +182,7 @@ class MultiApplianceNILM(nn.Module):
 
     Features:
     - 1 shared Conv1D + BiLSTM encoder.
-    - N independent dual-branch appliance heads.
+    - N independent dual-branch appliance heads (with optional auxiliary transition branch).
     """
 
     def __init__(
@@ -181,10 +197,12 @@ class MultiApplianceNILM(nn.Module):
         head_dense_dim: int = 32,
         norm_type: str = "batchnorm",
         num_groups: int = 8,
+        predict_transitions: bool = False,
     ):
         super().__init__()
         self.appliances = list(appliances)
         self.appliance_to_idx = {name: i for i, name in enumerate(self.appliances)}
+        self.predict_transitions = predict_transitions
 
         self.encoder = SharedEncoder(
             in_channels=in_channels,
@@ -203,6 +221,7 @@ class MultiApplianceNILM(nn.Module):
                 in_features=encoder_out_dim,
                 conv_filters=head_conv_filters,
                 dense_dim=head_dense_dim,
+                predict_transitions=predict_transitions,
             )
             for app_name in self.appliances
         })
@@ -210,28 +229,24 @@ class MultiApplianceNILM(nn.Module):
     def forward(
         self, x: torch.Tensor
     ) -> Dict[str, Union[torch.Tensor, Dict[str, torch.Tensor]]]:
-        """Forward pass through shared encoder and all appliance heads.
-
-        Args:
-            x: Aggregate input of shape (batch, 599, 1) or (batch, 1, 599).
-
-        Returns:
-            Dict containing:
-            - 'power_dict': {appliance_name: (batch, 599, 1)}
-            - 'onoff_dict': {appliance_name: (batch, 599, 1)}
-            - 'power': (batch, 599, num_appliances) stacked tensor
-            - 'on_off': (batch, 599, num_appliances) stacked tensor
-        """
         features = self.encoder(x)
 
         power_preds = []
         onoff_preds = []
+        trans_preds = []
         power_dict = {}
         onoff_dict = {}
+        trans_dict = {}
 
         for name in self.appliances:
             head = self.heads[name]
-            p, o = head(features)
+            head_out = head(features)
+            if self.predict_transitions:
+                p, o, tr = head_out
+                trans_dict[name] = tr
+                trans_preds.append(tr)
+            else:
+                p, o = head_out
             power_dict[name] = p
             onoff_dict[name] = o
             power_preds.append(p)
@@ -240,12 +255,16 @@ class MultiApplianceNILM(nn.Module):
         power_stacked = torch.cat(power_preds, dim=-1)  # (B, L, N)
         onoff_stacked = torch.cat(onoff_preds, dim=-1)  # (B, L, N)
 
-        return {
+        out = {
             "power": power_stacked,
             "on_off": onoff_stacked,
             "power_dict": power_dict,
             "onoff_dict": onoff_dict,
         }
+        if self.predict_transitions:
+            out["transition"] = torch.cat(trans_preds, dim=-1)
+            out["transition_dict"] = trans_dict
+        return out
 
 
 class DecoupledTemporalNILM(nn.Module):
@@ -269,12 +288,14 @@ class DecoupledTemporalNILM(nn.Module):
         head_dense_dim: int = 32,
         norm_type: str = "batchnorm",
         num_groups: int = 8,
+        predict_transitions: bool = False,
     ):
         super().__init__()
         self.appliances = list(appliances)
         self.appliance_to_idx = {name: i for i, name in enumerate(self.appliances)}
         self.in_channels = in_channels
         self.lstm_hidden = lstm_hidden
+        self.predict_transitions = predict_transitions
 
         if conv_filters is None:
             conv_filters = [32, 64, 128]
@@ -330,6 +351,7 @@ class DecoupledTemporalNILM(nn.Module):
                 in_features=lstm_out_dim,
                 conv_filters=head_conv_filters,
                 dense_dim=head_dense_dim,
+                predict_transitions=predict_transitions,
             )
             for name in self.appliances
         })
@@ -341,8 +363,10 @@ class DecoupledTemporalNILM(nn.Module):
         if x.dim() == 2:
             x = x.unsqueeze(1)  # (B, 1, L)
         elif x.dim() == 3:
-            if x.shape[-1] == self.in_channels:
+            if x.shape[-1] == self.in_channels and x.shape[1] != self.in_channels:
                 x = x.permute(0, 2, 1)  # (B, L, C) -> (B, C, L)
+            elif x.shape[-1] == 1 and x.shape[1] != 1:
+                x = x.permute(0, 2, 1)
 
         # Shared temporal convolutional feature map
         c = self.relu1(self.bn1(self.conv1(x)))
@@ -355,12 +379,20 @@ class DecoupledTemporalNILM(nn.Module):
 
         power_preds = []
         onoff_preds = []
+        trans_preds = []
         power_dict = {}
         onoff_dict = {}
+        trans_dict = {}
 
         for name in self.appliances:
             lstm_out, _ = self.lstms[name](shared_seq)  # (B, L, 2 * lstm_hidden)
-            p, o = self.heads[name](lstm_out)
+            head_out = self.heads[name](lstm_out)
+            if self.predict_transitions:
+                p, o, tr = head_out
+                trans_dict[name] = tr
+                trans_preds.append(tr)
+            else:
+                p, o = head_out
             power_dict[name] = p
             onoff_dict[name] = o
             power_preds.append(p)
@@ -369,28 +401,36 @@ class DecoupledTemporalNILM(nn.Module):
         power_stacked = torch.cat(power_preds, dim=-1)  # (B, L, N)
         onoff_stacked = torch.cat(onoff_preds, dim=-1)  # (B, L, N)
 
-        return {
+        out = {
             "power": power_stacked,
             "on_off": onoff_stacked,
             "power_dict": power_dict,
             "onoff_dict": onoff_dict,
         }
+        if self.predict_transitions:
+            out["transition"] = torch.cat(trans_preds, dim=-1)
+            out["transition_dict"] = trans_dict
+        return out
 
 
 def build_shared_model(
     appliances: List[str],
+    in_channels: int = 1,
     dropout: float = 0.2,
     lstm_hidden: int = 128,
     norm_type: str = "batchnorm",
     num_groups: int = 8,
+    predict_transitions: bool = False,
 ) -> MultiApplianceNILM:
     """Factory helper to build a MultiApplianceNILM model."""
     return MultiApplianceNILM(
         appliances=appliances,
+        in_channels=in_channels,
         dropout=dropout,
         lstm_hidden=lstm_hidden,
         norm_type=norm_type,
         num_groups=num_groups,
+        predict_transitions=predict_transitions,
     )
 
 
@@ -401,6 +441,7 @@ def build_decoupled_temporal_model(
     lstm_hidden: int = 48,
     norm_type: str = "batchnorm",
     num_groups: int = 8,
+    predict_transitions: bool = False,
 ) -> DecoupledTemporalNILM:
     """Factory helper to build a DecoupledTemporalNILM model."""
     return DecoupledTemporalNILM(
@@ -410,4 +451,5 @@ def build_decoupled_temporal_model(
         lstm_hidden=lstm_hidden,
         norm_type=norm_type,
         num_groups=num_groups,
+        predict_transitions=predict_transitions,
     )

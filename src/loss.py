@@ -59,10 +59,14 @@ class MultiApplianceLoss(nn.Module):
         focal_gamma: float = 2.0,
         focal_alpha: float = 0.25,
         focal_appliances: Optional[List[str]] = None,
+        lambda_transition: float = 0.0,
+        transition_weight: float = 5.0,
     ):
         super().__init__()
         self.appliances = list(appliances)
         self.lambda_bce = lambda_bce
+        self.lambda_transition = lambda_transition
+        self.transition_weight = transition_weight
         self.use_focal_loss = use_focal_loss
         if isinstance(on_weight, dict):
             self.on_weight = {app: float(on_weight.get(app, 8.0)) for app in self.appliances}
@@ -84,6 +88,8 @@ class MultiApplianceLoss(nn.Module):
         onoff_pred: torch.Tensor,
         onoff_true: torch.Tensor,
         appliance_mask: Optional[torch.Tensor] = None,
+        transition_pred: Optional[torch.Tensor] = None,
+        transition_true: Optional[torch.Tensor] = None,
     ) -> Tuple[torch.Tensor, Dict[str, float]]:
         """Args:
             power_pred: (batch, length, num_appliances)
@@ -92,6 +98,8 @@ class MultiApplianceLoss(nn.Module):
             onoff_true: (batch, length, num_appliances) in {0, 1}
             appliance_mask: Optional (batch, num_appliances) or (num_appliances,) binary mask
                             indicating whether the appliance is valid (1.0) or masked out (0.0).
+            transition_pred: Optional (batch, length, num_appliances) transition probability in [0, 1].
+            transition_true: Optional (batch, length, num_appliances) binary transition targets in {0, 1}.
 
         Returns:
             total_loss: Scalar torch tensor for backpropagation.
@@ -159,8 +167,20 @@ class MultiApplianceLoss(nn.Module):
             classif_loss = torch.sum(classif_raw * s_mask) / denom_bce
 
             app_loss = weighted_mse + self.lambda_bce * classif_loss
-            weight = self.appliance_weights.get(name, 1.0)
 
+            # Auxiliary transition loss
+            if self.lambda_transition > 0.0 and transition_pred is not None and transition_true is not None:
+                t_pred = transition_pred[..., i]
+                t_true = transition_true[..., i]
+                t_pred_clamped = torch.clamp(t_pred, eps, 1.0 - eps)
+                t_logits = torch.logit(t_pred_clamped)
+                w_trans = 1.0 + (self.transition_weight - 1.0) * t_true
+                trans_raw = F.binary_cross_entropy_with_logits(t_logits, t_true, weight=w_trans, reduction="none")
+                trans_loss = torch.sum(trans_raw * s_mask) / denom_bce
+                app_loss = app_loss + self.lambda_transition * trans_loss
+                breakdown[f"{name}_trans"] = trans_loss.item()
+
+            weight = self.appliance_weights.get(name, 1.0)
             total_loss = total_loss + weight * app_loss
 
             breakdown[f"{name}_mse"] = weighted_mse.item()

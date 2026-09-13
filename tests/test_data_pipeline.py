@@ -106,3 +106,33 @@ def test_sliding_window_shapes():
     assert isinstance(x_item, torch.Tensor)
     assert x_item.shape == (599, 1)
     assert m_item.shape == (599, len(appliances))
+
+
+def test_multiscale_channels_and_windows():
+    from src.data_pipeline import construct_multiscale_mains_channels
+
+    mains_1d = np.array([100.0, 110.0, 105.0, 120.0, 150.0, 140.0], dtype=np.float32)
+    channels = construct_multiscale_mains_channels(mains_1d, window=3)
+    assert channels.shape == (6, 3)
+    assert not np.isnan(channels).any()
+    # Check that channel 0 is identical to input
+    assert np.allclose(channels[:, 0], mains_1d)
+
+    # Test sliding windows with in_channels=3
+    df = generate_synthetic_house(num_days=2, sample_period_seconds=6, seed=42)
+    appliances = ["fridge", "microwave", "dishwasher", "washing_machine"]
+    norm_params = compute_normalization_params(df, appliances=appliances)
+
+    x, yp, yo, m = create_sliding_windows(
+        df,
+        appliances=appliances,
+        norm_params=norm_params,
+        window_length=599,
+        stride=149,
+        in_channels=3,
+    )
+    assert x.ndim == 3
+    assert x.shape[1] == 599
+    assert x.shape[2] == 3
+    assert not np.isnan(x).any()
+

@@ -204,6 +204,7 @@ def prepare_datasets(
     print("=====================================================================\n")
 
     # Window training set with overlapping stride (L // 4)
+    in_channels = getattr(config, "in_channels", 1)
     x_train_list, yp_train_list, yo_train_list, m_train_list = [], [], [], []
     for t_df, presence in train_dfs:
         x, yp, yo, m = create_sliding_windows(
@@ -213,6 +214,7 @@ def prepare_datasets(
             window_length=config.window_length,
             stride=config.train_stride,
             appliance_presence=presence,
+            in_channels=in_channels,
         )
         if len(x) > 0:
             x_train_list.append(x)
@@ -230,6 +232,7 @@ def prepare_datasets(
             window_length=config.window_length,
             stride=config.val_test_stride,
             appliance_presence=presence,
+            in_channels=in_channels,
         )
         if len(x) > 0:
             x_val_list.append(x)
@@ -247,6 +250,7 @@ def prepare_datasets(
             window_length=config.window_length,
             stride=config.val_test_stride,
             appliance_presence=presence,
+            in_channels=in_channels,
         )
         if len(x) > 0:
             x_test_list.append(x)
@@ -254,17 +258,17 @@ def prepare_datasets(
             yo_test_list.append(yo)
             m_test_list.append(m)
 
-    train_x = np.concatenate(x_train_list, axis=0) if x_train_list else np.zeros((0, config.window_length, 1))
+    train_x = np.concatenate(x_train_list, axis=0) if x_train_list else np.zeros((0, config.window_length, in_channels))
     train_yp = np.concatenate(yp_train_list, axis=0) if yp_train_list else np.zeros((0, config.window_length, len(appliances)))
     train_yo = np.concatenate(yo_train_list, axis=0) if yo_train_list else np.zeros((0, config.window_length, len(appliances)))
     train_m = np.concatenate(m_train_list, axis=0) if m_train_list else np.zeros((0, config.window_length, len(appliances)))
 
-    val_x = np.concatenate(x_val_list, axis=0) if x_val_list else np.zeros((0, config.window_length, 1))
+    val_x = np.concatenate(x_val_list, axis=0) if x_val_list else np.zeros((0, config.window_length, in_channels))
     val_yp = np.concatenate(yp_val_list, axis=0) if yp_val_list else np.zeros((0, config.window_length, len(appliances)))
     val_yo = np.concatenate(yo_val_list, axis=0) if yo_val_list else np.zeros((0, config.window_length, len(appliances)))
     val_m = np.concatenate(m_val_list, axis=0) if m_val_list else np.zeros((0, config.window_length, len(appliances)))
 
-    test_x = np.concatenate(x_test_list, axis=0) if x_test_list else np.zeros((0, config.window_length, 1))
+    test_x = np.concatenate(x_test_list, axis=0) if x_test_list else np.zeros((0, config.window_length, in_channels))
     test_yp = np.concatenate(yp_test_list, axis=0) if yp_test_list else np.zeros((0, config.window_length, len(appliances)))
     test_yo = np.concatenate(yo_test_list, axis=0) if yo_test_list else np.zeros((0, config.window_length, len(appliances)))
     test_m = np.concatenate(m_test_list, axis=0) if m_test_list else np.zeros((0, config.window_length, len(appliances)))
@@ -419,10 +423,13 @@ def train_model(
         generator=dl_gen,
     )
 
+    predict_transitions = getattr(config, "predict_transitions", False)
+    in_channels = getattr(config, "in_channels", 1)
+
     if getattr(config, "model_type", "shared") == "decoupled_temporal":
         model = DecoupledTemporalNILM(
             appliances=config.appliances,
-            in_channels=getattr(config, "in_channels", 1),
+            in_channels=in_channels,
             conv_filters=config.conv_filters,
             conv_kernels=config.conv_kernels,
             dropout=config.encoder_dropout,
@@ -431,11 +438,12 @@ def train_model(
             head_dense_dim=config.head_dense_dim,
             norm_type=getattr(config, "norm_type", "batchnorm"),
             num_groups=getattr(config, "num_groups", 8),
+            predict_transitions=predict_transitions,
         ).to(device)
     else:
         model = MultiApplianceNILM(
             appliances=config.appliances,
-            in_channels=getattr(config, "in_channels", 1),
+            in_channels=in_channels,
             conv_filters=config.conv_filters,
             conv_kernels=config.conv_kernels,
             dropout=config.encoder_dropout,
@@ -444,6 +452,7 @@ def train_model(
             head_dense_dim=config.head_dense_dim,
             norm_type=getattr(config, "norm_type", "batchnorm"),
             num_groups=getattr(config, "num_groups", 8),
+            predict_transitions=predict_transitions,
         ).to(device)
 
     # Load pretrained weights if specified (for transfer learning / fine-tuning)
@@ -484,6 +493,8 @@ def train_model(
         focal_gamma=getattr(config, "focal_gamma", 2.0),
         focal_alpha=getattr(config, "focal_alpha", 0.25),
         focal_appliances=getattr(config, "focal_appliances", None),
+        lambda_transition=getattr(config, "lambda_transition", 0.5) if predict_transitions else 0.0,
+        transition_weight=getattr(config, "transition_weight", 5.0),
     ).to(device)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=config.lr)
@@ -560,6 +571,12 @@ def train_model(
             yo_b = yo_b.to(device)
             mask_b = mask_b.to(device)
 
+            if predict_transitions:
+                trans_b = torch.zeros_like(yo_b)
+                trans_b[:, 1:, :] = torch.abs(yo_b[:, 1:, :] - yo_b[:, :-1, :])
+            else:
+                trans_b = None
+
             optimizer.zero_grad()
             with torch.amp.autocast("cuda", enabled=use_amp):
                 preds = model(x_b)
@@ -569,6 +586,8 @@ def train_model(
                     onoff_pred=preds["on_off"],
                     onoff_true=yo_b,
                     appliance_mask=mask_b,
+                    transition_pred=preds.get("transition"),
+                    transition_true=trans_b,
                 )
 
             scaler.scale(loss).backward()
@@ -599,6 +618,12 @@ def train_model(
                 yo_b = yo_b.to(device)
                 mask_b = mask_b.to(device)
 
+                if predict_transitions:
+                    trans_b = torch.zeros_like(yo_b)
+                    trans_b[:, 1:, :] = torch.abs(yo_b[:, 1:, :] - yo_b[:, :-1, :])
+                else:
+                    trans_b = None
+
                 with torch.amp.autocast("cuda", enabled=use_amp):
                     preds = model(x_b)
                     loss, breakdown = criterion(
@@ -607,6 +632,8 @@ def train_model(
                         onoff_pred=preds["on_off"],
                         onoff_true=yo_b,
                         appliance_mask=mask_b,
+                        transition_pred=preds.get("transition"),
+                        transition_true=trans_b,
                     )
                 val_loss_sum += loss.item()
                 val_batches += 1

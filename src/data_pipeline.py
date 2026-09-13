@@ -300,6 +300,42 @@ def resample_and_clean(
     return df_resampled
 
 
+def construct_multiscale_mains_channels(
+    mains_norm: np.ndarray,
+    window: int = 50,
+) -> np.ndarray:
+    """Constructs 3 input channels from normalized mains:
+    1. Normalized aggregate mains x_t
+    2. First difference Delta x_t = (x_t - x_{t-1}) / std(Delta x)
+    3. Locally detrended power: x_t - median_50(x_t)
+
+    Args:
+        mains_norm: 1D or (T, 1) normalized mains array.
+        window: Median filter window size (50 timesteps = 5 mins @ 6s).
+
+    Returns:
+        (T, 3) float32 multi-scale input array.
+    """
+    from scipy.ndimage import median_filter
+
+    if mains_norm.ndim > 1:
+        mains_1d = mains_norm.squeeze(-1)
+    else:
+        mains_1d = mains_norm
+
+    # Channel 1: First-order difference Delta x_t = x_t - x_{t-1}
+    delta = np.zeros_like(mains_1d)
+    delta[1:] = mains_1d[1:] - mains_1d[:-1]
+    delta_std = float(np.std(delta))
+    delta_norm = delta / (delta_std + 1e-8)
+
+    # Channel 2: Locally detrended power (removes passive continuous baseload)
+    baseline_median = median_filter(mains_1d, size=window, mode="nearest")
+    detrended = mains_1d - baseline_median
+
+    return np.stack([mains_1d, delta_norm, detrended], axis=-1).astype(np.float32)
+
+
 def create_sliding_windows(
     df: pd.DataFrame,
     appliances: List[str],
@@ -307,11 +343,12 @@ def create_sliding_windows(
     window_length: int = 599,
     stride: int = 149,
     appliance_presence: Optional[Dict[str, bool]] = None,
+    in_channels: int = 1,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """Generates fixed-length sliding windows for aggregate and target loads.
 
     Returns:
-        X: (N, 599, 1) normalized aggregate windows.
+        X: (N, 599, in_channels) normalized aggregate windows.
         Y_power: (N, 599, num_appliances) normalized power windows.
         Y_onoff: (N, 599, num_appliances) binary on/off state labels.
         App_mask: (N, num_appliances) binary mask of appliance availability.
@@ -329,6 +366,11 @@ def create_sliding_windows(
 
     mains_raw = np.nan_to_num(df_subset["mains"].values, nan=0.0).astype(np.float32)
     mains_norm = norm_params.normalize_mains(mains_raw)
+
+    if in_channels == 3:
+        mains_features = construct_multiscale_mains_channels(mains_norm)
+    else:
+        mains_features = mains_norm[:, np.newaxis]
 
     app_power_norm_list = []
     app_onoff_list = []
@@ -364,14 +406,14 @@ def create_sliding_windows(
         end_idx = start_idx + window_length
         # Discard windows only if mains has NaNs
         if np.all(mains_valid[start_idx:end_idx]):
-            x_windows.append(mains_norm[start_idx:end_idx, np.newaxis])
+            x_windows.append(mains_features[start_idx:end_idx])
             y_power_windows.append(targets_power[start_idx:end_idx])
             y_onoff_windows.append(targets_onoff[start_idx:end_idx])
             mask_windows.append(targets_mask[start_idx:end_idx])
 
     if not x_windows:
         return (
-            np.empty((0, window_length, 1), dtype=np.float32),
+            np.empty((0, window_length, in_channels), dtype=np.float32),
             np.empty((0, window_length, len(appliances)), dtype=np.float32),
             np.empty((0, window_length, len(appliances)), dtype=np.float32),
             np.empty((0, window_length, len(appliances)), dtype=np.float32),

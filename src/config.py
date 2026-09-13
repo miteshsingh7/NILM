@@ -168,6 +168,9 @@ class NILMConfig:
     lr_reduce_factor: float = 0.5
     min_lr: float = 1e-6
     mixed_precision: bool = False  # Disabled: BCE is incompatible with CUDA AMP
+    predict_transitions: bool = False  # Phase 3 auxiliary transition task
+    lambda_transition: float = 0.5     # Weight for auxiliary transition BCE loss
+    transition_weight: float = 5.0     # Active transition positive-weight multiplier
     use_focal_loss: bool = False  # If True, replaces on_weight with Binary Focal Loss
     focal_gamma: float = 2.0      # Focusing parameter gamma
     focal_alpha: float = 0.25     # Balance parameter alpha

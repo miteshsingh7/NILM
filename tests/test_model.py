@@ -152,3 +152,54 @@ def test_decoupled_temporal_nilm():
     for p in model.lstms["microwave"].parameters():
         assert p.grad is None
 
+
+def test_multiscale_and_transition_heads():
+    appliances = ["fridge", "microwave", "dishwasher", "washing_machine"]
+    model = DecoupledTemporalNILM(
+        appliances=appliances,
+        in_channels=3,
+        lstm_hidden=32,
+        norm_type="groupnorm",
+        predict_transitions=True,
+    )
+
+    batch_size = 2
+    seq_len = 100
+    x = torch.randn(batch_size, seq_len, 3)
+
+    preds = model(x)
+    assert preds["power"].shape == (batch_size, seq_len, 4)
+    assert preds["on_off"].shape == (batch_size, seq_len, 4)
+    assert "transition" in preds
+    assert preds["transition"].shape == (batch_size, seq_len, 4)
+
+    # Test MultiApplianceLoss with transition loss
+    criterion = MultiApplianceLoss(
+        appliances=appliances,
+        lambda_bce=1.0,
+        lambda_transition=0.5,
+    )
+    y_power = torch.randn(batch_size, seq_len, 4)
+    y_onoff = torch.randint(0, 2, (batch_size, seq_len, 4)).float()
+    y_trans = torch.randint(0, 2, (batch_size, seq_len, 4)).float()
+    mask = torch.ones((batch_size, 4))
+
+    loss, breakdown = criterion(
+        power_pred=preds["power"],
+        power_true=y_power,
+        onoff_pred=preds["on_off"],
+        onoff_true=y_onoff,
+        appliance_mask=mask,
+        transition_pred=preds["transition"],
+        transition_true=y_trans,
+    )
+    assert loss.item() > 0
+    assert "fridge_trans" in breakdown
+    assert "microwave_trans" in breakdown
+
+    loss.backward()
+    # Check that transition classifier weights received gradients
+    for app in appliances:
+        assert model.heads[app].transition_classifier.weight.grad is not None
+
+
