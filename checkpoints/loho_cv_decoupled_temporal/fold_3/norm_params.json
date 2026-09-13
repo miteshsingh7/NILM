@@ -1,0 +1,26 @@
+{
+  "mains_mean": 295.1335748083823,
+  "mains_std": 485.3617654671866,
+  "appliance_stats": {
+    "fridge": {
+      "active_mean": 94.6713182174899,
+      "active_std": 59.544073621711284,
+      "threshold": 50.0
+    },
+    "microwave": {
+      "active_mean": 754.2803555938698,
+      "active_std": 509.7700431899816,
+      "threshold": 200.0
+    },
+    "dishwasher": {
+      "active_mean": 340.97923240737066,
+      "active_std": 342.8995871959011,
+      "threshold": 10.0
+    },
+    "washing_machine": {
+      "active_mean": 844.7308247554887,
+      "active_std": 1036.4968140180085,
+      "threshold": 20.0
+    }
+  }
+}
