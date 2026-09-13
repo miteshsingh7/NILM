@@ -63,9 +63,9 @@ def export_best_checkpoint(ckpt_dir: Path, epoch: int, val_loss: float, run_hash
             if (ckpt_dir / "norm_params.json").exists():
                 shutil.copy(str(ckpt_dir / "norm_params.json"), str(working_dir / "norm_params.json"))
 
-        # If kaggle credentials exist, push version immediately
+        # If running inside Kaggle container and credentials exist, push version
         kaggle_json = Path.home() / ".kaggle/kaggle.json"
-        if kaggle_json.exists() or "KAGGLE_USERNAME" in os.environ:
+        if working_dir.exists() and (kaggle_json.exists() or "KAGGLE_USERNAME" in os.environ):
             cmd = [
                 "kaggle", "datasets", "version",
                 "-p", str(ckpt_dir),
