@@ -28,7 +28,7 @@ from src.data_pipeline import (
     NILMDataset,
 )
 from src.loss import MultiApplianceLoss
-from src.model import MultiApplianceNILM
+from src.model import MultiApplianceNILM, DecoupledTemporalNILM
 from src.sample_data import generate_benchmark_dataset
 from src.utils import save_checkpoint
 
@@ -419,15 +419,32 @@ def train_model(
         generator=dl_gen,
     )
 
-    model = MultiApplianceNILM(
-        appliances=config.appliances,
-        conv_filters=config.conv_filters,
-        conv_kernels=config.conv_kernels,
-        dropout=config.encoder_dropout,
-        lstm_hidden=config.lstm_hidden_size,
-        head_conv_filters=config.head_conv_filters,
-        head_dense_dim=config.head_dense_dim,
-    ).to(device)
+    if getattr(config, "model_type", "shared") == "decoupled_temporal":
+        model = DecoupledTemporalNILM(
+            appliances=config.appliances,
+            in_channels=getattr(config, "in_channels", 1),
+            conv_filters=config.conv_filters,
+            conv_kernels=config.conv_kernels,
+            dropout=config.encoder_dropout,
+            lstm_hidden=config.lstm_hidden_size,
+            head_conv_filters=config.head_conv_filters,
+            head_dense_dim=config.head_dense_dim,
+            norm_type=getattr(config, "norm_type", "batchnorm"),
+            num_groups=getattr(config, "num_groups", 8),
+        ).to(device)
+    else:
+        model = MultiApplianceNILM(
+            appliances=config.appliances,
+            in_channels=getattr(config, "in_channels", 1),
+            conv_filters=config.conv_filters,
+            conv_kernels=config.conv_kernels,
+            dropout=config.encoder_dropout,
+            lstm_hidden=config.lstm_hidden_size,
+            head_conv_filters=config.head_conv_filters,
+            head_dense_dim=config.head_dense_dim,
+            norm_type=getattr(config, "norm_type", "batchnorm"),
+            num_groups=getattr(config, "num_groups", 8),
+        ).to(device)
 
     # Load pretrained weights if specified (for transfer learning / fine-tuning)
     if pretrained_weights_path is not None:

@@ -4,7 +4,7 @@ import pytest
 import torch
 
 from src.loss import MultiApplianceLoss
-from src.model import ApplianceHead, MultiApplianceNILM, SharedEncoder
+from src.model import ApplianceHead, MultiApplianceNILM, SharedEncoder, DecoupledTemporalNILM
 
 
 def test_shared_encoder_forward():
@@ -96,3 +96,59 @@ def test_on_weighting_increases_loss_on_active_burst():
 
     # In weighted loss, active steps have weight 8x
     assert loss_w.item() > loss_unw.item()
+
+
+def test_normalization_types_forward():
+    """Verify GroupNorm and LayerNorm work seamlessly in SharedEncoder and MultiApplianceNILM."""
+    x = torch.randn(2, 100, 1)
+    appliances = ["fridge", "microwave"]
+
+    for norm in ["batchnorm", "groupnorm", "layernorm"]:
+        encoder = SharedEncoder(in_channels=1, norm_type=norm, lstm_hidden=32)
+        out = encoder(x)
+        assert out.shape == (2, 100, 64)
+
+        model = MultiApplianceNILM(appliances=appliances, norm_type=norm, lstm_hidden=32)
+        preds = model(x)
+        assert preds["power"].shape == (2, 100, 2)
+        assert preds["on_off"].shape == (2, 100, 2)
+
+
+def test_decoupled_temporal_nilm():
+    """Verify DecoupledTemporalNILM forward pass, shapes, and decoupled gradients."""
+    appliances = ["fridge", "microwave", "dishwasher", "washing_machine"]
+    model = DecoupledTemporalNILM(
+        appliances=appliances,
+        in_channels=1,
+        lstm_hidden=48,  # Parameter-matched
+        norm_type="groupnorm",
+    )
+
+    batch_size = 2
+    seq_len = 200
+    x = torch.randn(batch_size, seq_len, 1)
+
+    preds = model(x)
+
+    assert preds["power"].shape == (batch_size, seq_len, 4)
+    assert preds["on_off"].shape == (batch_size, seq_len, 4)
+
+    # Verify per-appliance LSTM parameters exist and are decoupled
+    for app in appliances:
+        assert app in model.lstms
+        assert app in model.heads
+        assert preds["power_dict"][app].shape == (batch_size, seq_len, 1)
+
+    # Verify backpropagation through a single appliance head only affects its own BiLSTM
+    fridge_loss = preds["power_dict"]["fridge"].sum()
+    fridge_loss.backward()
+
+    # Fridge LSTM should have gradients
+    for p in model.lstms["fridge"].parameters():
+        assert p.grad is not None
+        break
+
+    # Microwave LSTM should NOT have gradients from fridge loss
+    for p in model.lstms["microwave"].parameters():
+        assert p.grad is None
+

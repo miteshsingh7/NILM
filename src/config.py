@@ -151,6 +151,10 @@ class NILMConfig:
     lstm_hidden_size: int = 128
     head_conv_filters: int = 64
     head_dense_dim: int = 32
+    in_channels: int = 1
+    norm_type: str = "batchnorm"  # "batchnorm", "groupnorm", "layernorm"
+    model_type: str = "shared"    # "shared" or "decoupled_temporal"
+    num_groups: int = 8           # Group count for GroupNorm
 
     # Training
     batch_size: int = 128

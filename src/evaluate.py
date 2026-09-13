@@ -23,7 +23,7 @@ from src.data_pipeline import (
     NILMDataset,
     NormalizationParams,
 )
-from src.model import MultiApplianceNILM
+from src.model import MultiApplianceNILM, DecoupledTemporalNILM
 from src.diagnostics import compute_phase0_diagnostics, format_phase0_diagnostic_table
 from src.utils import (
     compute_f1_score,
@@ -247,9 +247,30 @@ def run_evaluation(
               f"active_std={stats.get('active_std', 1.0):.2f} W, threshold={stats.get('threshold', 20.0):.1f} W")
     print("=======================================================================\n")
 
-    model = MultiApplianceNILM(appliances=appliances)
     state_dict = ckpt["model_state_dict"]
     clean_state_dict = {k[7:] if k.startswith("module.") else k: v for k, v in state_dict.items()}
+
+    # Auto-detect architecture and normalization type from state_dict
+    is_decoupled = any(k.startswith("lstms.") for k in clean_state_dict)
+    has_running_stats = any("running_mean" in k for k in clean_state_dict)
+    norm_type = "batchnorm" if has_running_stats else "groupnorm"
+
+    if is_decoupled:
+        lstm_hidden = 48
+        for k in clean_state_dict:
+            if "weight_ih_l0" in k:
+                lstm_hidden = clean_state_dict[k].shape[0] // 4
+                break
+        model = DecoupledTemporalNILM(
+            appliances=appliances,
+            lstm_hidden=lstm_hidden,
+            norm_type=norm_type,
+        )
+    else:
+        model = MultiApplianceNILM(
+            appliances=appliances,
+            norm_type=norm_type,
+        )
     model.load_state_dict(clean_state_dict)
     if device == "cuda" and torch.cuda.device_count() > 1:
         model = torch.nn.DataParallel(model)

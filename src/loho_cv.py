@@ -66,6 +66,9 @@ def run_single_fold(
     device: Optional[str] = None,
     use_oversampling: bool = True,
     boost_weight: float = 2.5,
+    norm_type: str = "batchnorm",
+    model_type: str = "shared",
+    lstm_hidden_size: Optional[int] = None,
 ) -> Dict[str, Any]:
     """Runs training and evaluation for a single LOHO-CV fold."""
     ckpt_dir = Path(base_checkpoint_dir) / f"fold_{fold}"
@@ -77,7 +80,11 @@ def run_single_fold(
         lr=lr,
         held_out_house=fold,
         checkpoint_dir=str(ckpt_dir),
+        norm_type=norm_type,
+        model_type=model_type,
     )
+    if lstm_hidden_size is not None:
+        cfg_kwargs["lstm_hidden_size"] = lstm_hidden_size
     if on_weight is not None:
         cfg_kwargs["on_weight"] = on_weight
     config = NILMConfig(**cfg_kwargs)

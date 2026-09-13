@@ -10,6 +10,21 @@ import torch
 import torch.nn as nn
 
 
+def _make_norm_layer(norm_type: str, channels: int, num_groups: int = 8) -> nn.Module:
+    """Factory helper for normalization layers."""
+    if norm_type == "batchnorm":
+        return nn.BatchNorm1d(channels)
+    elif norm_type == "groupnorm":
+        groups = min(num_groups, channels)
+        while channels % groups != 0 and groups > 1:
+            groups -= 1
+        return nn.GroupNorm(groups, channels)
+    elif norm_type == "layernorm":
+        return nn.GroupNorm(1, channels)
+    else:
+        raise ValueError(f"Unknown norm_type: '{norm_type}'. Supported: 'batchnorm', 'groupnorm', 'layernorm'.")
+
+
 class SharedEncoder(nn.Module):
     """Shared temporal-spectral feature extractor for aggregate mains power."""
 
@@ -20,12 +35,16 @@ class SharedEncoder(nn.Module):
         conv_kernels: Optional[List[int]] = None,
         dropout: float = 0.2,
         lstm_hidden: int = 128,
+        norm_type: str = "batchnorm",
+        num_groups: int = 8,
     ):
         super().__init__()
         if conv_filters is None:
             conv_filters = [32, 64, 128]
         if conv_kernels is None:
             conv_kernels = [9, 7, 5]
+
+        self.norm_type = norm_type
 
         # Conv1D layers with padding='same'
         # kernel 9 -> padding 4, kernel 7 -> padding 3, kernel 5 -> padding 2
@@ -35,7 +54,7 @@ class SharedEncoder(nn.Module):
             kernel_size=conv_kernels[0],
             padding=conv_kernels[0] // 2,
         )
-        self.bn1 = nn.BatchNorm1d(conv_filters[0])
+        self.bn1 = _make_norm_layer(norm_type, conv_filters[0], num_groups=num_groups)
         self.relu1 = nn.ReLU()
 
         self.conv2 = nn.Conv1d(
@@ -44,7 +63,7 @@ class SharedEncoder(nn.Module):
             kernel_size=conv_kernels[1],
             padding=conv_kernels[1] // 2,
         )
-        self.bn2 = nn.BatchNorm1d(conv_filters[1])
+        self.bn2 = _make_norm_layer(norm_type, conv_filters[1], num_groups=num_groups)
         self.relu2 = nn.ReLU()
 
         self.conv3 = nn.Conv1d(
@@ -53,7 +72,7 @@ class SharedEncoder(nn.Module):
             kernel_size=conv_kernels[2],
             padding=conv_kernels[2] // 2,
         )
-        self.bn3 = nn.BatchNorm1d(conv_filters[2])
+        self.bn3 = _make_norm_layer(norm_type, conv_filters[2], num_groups=num_groups)
         self.relu3 = nn.ReLU()
 
         self.dropout = nn.Dropout(dropout)
@@ -160,6 +179,8 @@ class MultiApplianceNILM(nn.Module):
         lstm_hidden: int = 128,
         head_conv_filters: int = 64,
         head_dense_dim: int = 32,
+        norm_type: str = "batchnorm",
+        num_groups: int = 8,
     ):
         super().__init__()
         self.appliances = list(appliances)
@@ -171,6 +192,8 @@ class MultiApplianceNILM(nn.Module):
             conv_kernels=conv_kernels,
             dropout=dropout,
             lstm_hidden=lstm_hidden,
+            norm_type=norm_type,
+            num_groups=num_groups,
         )
 
         encoder_out_dim = lstm_hidden * 2  # Bidirectional
@@ -225,14 +248,166 @@ class MultiApplianceNILM(nn.Module):
         }
 
 
+class DecoupledTemporalNILM(nn.Module):
+    """Architecture for Phase 4: Shared Conv1D front-end + Appliance-Specific BiLSTMs.
+
+    Resolves shared encoder gradient conflict:
+    - Conv1D layers remain shared across all appliances (edges, transients, baseline power).
+    - BiLSTM layers are strictly decoupled per appliance so rare loads (washing machine, dishwasher)
+      are not overridden by dominant gradient updates from high-duty loads (fridge, microwave).
+    """
+
+    def __init__(
+        self,
+        appliances: List[str],
+        in_channels: int = 1,
+        conv_filters: Optional[List[int]] = None,
+        conv_kernels: Optional[List[int]] = None,
+        dropout: float = 0.2,
+        lstm_hidden: int = 48,
+        head_conv_filters: int = 64,
+        head_dense_dim: int = 32,
+        norm_type: str = "batchnorm",
+        num_groups: int = 8,
+    ):
+        super().__init__()
+        self.appliances = list(appliances)
+        self.appliance_to_idx = {name: i for i, name in enumerate(self.appliances)}
+        self.in_channels = in_channels
+        self.lstm_hidden = lstm_hidden
+
+        if conv_filters is None:
+            conv_filters = [32, 64, 128]
+        if conv_kernels is None:
+            conv_kernels = [9, 7, 5]
+
+        # Shared Conv1D Front-End
+        self.conv1 = nn.Conv1d(
+            in_channels,
+            conv_filters[0],
+            kernel_size=conv_kernels[0],
+            padding=conv_kernels[0] // 2,
+        )
+        self.bn1 = _make_norm_layer(norm_type, conv_filters[0], num_groups=num_groups)
+        self.relu1 = nn.ReLU()
+
+        self.conv2 = nn.Conv1d(
+            conv_filters[0],
+            conv_filters[1],
+            kernel_size=conv_kernels[1],
+            padding=conv_kernels[1] // 2,
+        )
+        self.bn2 = _make_norm_layer(norm_type, conv_filters[1], num_groups=num_groups)
+        self.relu2 = nn.ReLU()
+
+        self.conv3 = nn.Conv1d(
+            conv_filters[1],
+            conv_filters[2],
+            kernel_size=conv_kernels[2],
+            padding=conv_kernels[2] // 2,
+        )
+        self.bn3 = _make_norm_layer(norm_type, conv_filters[2], num_groups=num_groups)
+        self.relu3 = nn.ReLU()
+
+        self.dropout = nn.Dropout(dropout)
+
+        # Appliance-Specific BiLSTMs
+        self.lstms = nn.ModuleDict({
+            name: nn.LSTM(
+                input_size=conv_filters[2],
+                hidden_size=lstm_hidden,
+                num_layers=1,
+                bidirectional=True,
+                batch_first=True,
+            )
+            for name in self.appliances
+        })
+
+        # Appliance-Specific Dual-Branch Heads
+        lstm_out_dim = lstm_hidden * 2
+        self.heads = nn.ModuleDict({
+            name: ApplianceHead(
+                in_features=lstm_out_dim,
+                conv_filters=head_conv_filters,
+                dense_dim=head_dense_dim,
+            )
+            for name in self.appliances
+        })
+
+    def forward(
+        self, x: torch.Tensor
+    ) -> Dict[str, Union[torch.Tensor, Dict[str, torch.Tensor]]]:
+        # Ensure shape (batch, channels, length) for Conv1D
+        if x.dim() == 2:
+            x = x.unsqueeze(1)  # (B, 1, L)
+        elif x.dim() == 3:
+            if x.shape[-1] == self.in_channels:
+                x = x.permute(0, 2, 1)  # (B, L, C) -> (B, C, L)
+
+        # Shared temporal convolutional feature map
+        c = self.relu1(self.bn1(self.conv1(x)))
+        c = self.relu2(self.bn2(self.conv2(c)))
+        c = self.relu3(self.bn3(self.conv3(c)))
+        c = self.dropout(c)  # (B, 128, L)
+
+        # Permute for LSTM: (B, C, L) -> (B, L, C)
+        shared_seq = c.permute(0, 2, 1)
+
+        power_preds = []
+        onoff_preds = []
+        power_dict = {}
+        onoff_dict = {}
+
+        for name in self.appliances:
+            lstm_out, _ = self.lstms[name](shared_seq)  # (B, L, 2 * lstm_hidden)
+            p, o = self.heads[name](lstm_out)
+            power_dict[name] = p
+            onoff_dict[name] = o
+            power_preds.append(p)
+            onoff_preds.append(o)
+
+        power_stacked = torch.cat(power_preds, dim=-1)  # (B, L, N)
+        onoff_stacked = torch.cat(onoff_preds, dim=-1)  # (B, L, N)
+
+        return {
+            "power": power_stacked,
+            "on_off": onoff_stacked,
+            "power_dict": power_dict,
+            "onoff_dict": onoff_dict,
+        }
+
+
 def build_shared_model(
     appliances: List[str],
     dropout: float = 0.2,
     lstm_hidden: int = 128,
+    norm_type: str = "batchnorm",
+    num_groups: int = 8,
 ) -> MultiApplianceNILM:
     """Factory helper to build a MultiApplianceNILM model."""
     return MultiApplianceNILM(
         appliances=appliances,
         dropout=dropout,
         lstm_hidden=lstm_hidden,
+        norm_type=norm_type,
+        num_groups=num_groups,
+    )
+
+
+def build_decoupled_temporal_model(
+    appliances: List[str],
+    in_channels: int = 1,
+    dropout: float = 0.2,
+    lstm_hidden: int = 48,
+    norm_type: str = "batchnorm",
+    num_groups: int = 8,
+) -> DecoupledTemporalNILM:
+    """Factory helper to build a DecoupledTemporalNILM model."""
+    return DecoupledTemporalNILM(
+        appliances=appliances,
+        in_channels=in_channels,
+        dropout=dropout,
+        lstm_hidden=lstm_hidden,
+        norm_type=norm_type,
+        num_groups=num_groups,
     )
