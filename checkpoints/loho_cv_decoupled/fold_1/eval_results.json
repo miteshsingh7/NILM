@@ -19,7 +19,8 @@
       "f1": 0.6223,
       "precision": 0.6361,
       "recall": 0.6091,
-      "accuracy": 0.9241
+      "accuracy": 0.9241,
+      "ap": 0.6651
     },
     "microwave": {
       "active_samples": 392,
@@ -31,7 +32,8 @@
       "f1": 0.228,
       "precision": 0.1363,
       "recall": 0.6964,
-      "accuracy": 0.9939
+      "accuracy": 0.9939,
+      "ap": 0.4332
     },
     "dishwasher": {
       "active_samples": 1758,
@@ -43,7 +45,8 @@
       "f1": 0.1534,
       "precision": 0.2306,
       "recall": 0.1149,
-      "accuracy": 0.9927
+      "accuracy": 0.9927,
+      "ap": 0.1504
     },
     "washing_machine": {
       "active_samples": 3760,
@@ -55,7 +58,8 @@
       "f1": 0.8142,
       "precision": 0.8412,
       "recall": 0.7888,
-      "accuracy": 0.9956
+      "accuracy": 0.9956,
+      "ap": 0.8656
     }
   },
   "cross_household": {
@@ -69,7 +73,11 @@
       "f1": 0.1451,
       "precision": 0.6004,
       "recall": 0.0825,
-      "accuracy": 0.7996
+      "accuracy": 0.7996,
+      "ap": 0.3703,
+      "oracle_f1": 0.4691,
+      "oracle_threshold": 0.23,
+      "ceiling_gap": 0.324
     },
     "microwave": {
       "active_samples": 5195,
@@ -81,7 +89,11 @@
       "f1": 0.3528,
       "precision": 0.631,
       "recall": 0.2449,
-      "accuracy": 0.9899
+      "accuracy": 0.9899,
+      "ap": 0.3378,
+      "oracle_f1": 0.4538,
+      "oracle_threshold": 0.02,
+      "ceiling_gap": 0.101
     },
     "dishwasher": {
       "active_samples": 17519,
@@ -93,7 +105,11 @@
       "f1": 0.0926,
       "precision": 0.5177,
       "recall": 0.0509,
-      "accuracy": 0.9622
+      "accuracy": 0.9622,
+      "ap": 0.2537,
+      "oracle_f1": 0.3809,
+      "oracle_threshold": 0.03,
+      "ceiling_gap": 0.2883
     },
     "washing_machine": {
       "active_samples": 8980,
@@ -105,7 +121,11 @@
       "f1": 0.4018,
       "precision": 0.4911,
       "recall": 0.34,
-      "accuracy": 0.9803
+      "accuracy": 0.9803,
+      "ap": 0.3534,
+      "oracle_f1": 0.45,
+      "oracle_threshold": 0.87,
+      "ceiling_gap": 0.0482
     }
   },
   "comparison_table": [

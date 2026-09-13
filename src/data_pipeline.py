@@ -317,12 +317,17 @@ def create_sliding_windows(
         App_mask: (N, num_appliances) binary mask of appliance availability.
     """
     cols = ["mains"] + appliances
+    for col in cols:
+        if col not in df.columns:
+            df[col] = np.nan
+
     df_subset = df[cols].copy()
 
-    valid_mask = ~df_subset.isna().any(axis=1).values
+    # Window validity is determined SOLELY by aggregate mains
+    mains_valid = ~df_subset["mains"].isna().values
     total_len = len(df_subset)
 
-    mains_raw = df_subset["mains"].values.astype(np.float32)
+    mains_raw = np.nan_to_num(df_subset["mains"].values, nan=0.0).astype(np.float32)
     mains_norm = norm_params.normalize_mains(mains_raw)
 
     app_power_norm_list = []
@@ -331,17 +336,24 @@ def create_sliding_windows(
 
     for app in appliances:
         is_present = appliance_presence.get(app, True) if appliance_presence else True
-        raw_p = df_subset[app].values.astype(np.float32)
-        norm_p = norm_params.normalize_appliance(raw_p, app)
+        raw_series = df_subset[app].values
+        if is_present:
+            app_valid_t = (~np.isnan(raw_series)).astype(np.float32)
+        else:
+            app_valid_t = np.zeros(total_len, dtype=np.float32)
+
+        clean_p = np.nan_to_num(raw_series, nan=0.0).astype(np.float32)
+        norm_p = norm_params.normalize_appliance(clean_p, app)
         thresh = norm_params.appliance_stats.get(app, {}).get("threshold", 20.0)
-        onoff = (raw_p >= thresh).astype(np.float32)
+        onoff = ((clean_p >= thresh) & (app_valid_t > 0.5)).astype(np.float32)
+
         app_power_norm_list.append(norm_p)
         app_onoff_list.append(onoff)
-        app_mask_list.append(1.0 if is_present else 0.0)
+        app_mask_list.append(app_valid_t)
 
     targets_power = np.stack(app_power_norm_list, axis=-1)  # (total_len, num_apps)
     targets_onoff = np.stack(app_onoff_list, axis=-1)       # (total_len, num_apps)
-    mask_vector = np.array(app_mask_list, dtype=np.float32) # (num_apps,)
+    targets_mask = np.stack(app_mask_list, axis=-1)         # (total_len, num_apps)
 
     x_windows = []
     y_power_windows = []
@@ -350,18 +362,19 @@ def create_sliding_windows(
 
     for start_idx in range(0, total_len - window_length + 1, stride):
         end_idx = start_idx + window_length
-        if np.all(valid_mask[start_idx:end_idx]):
+        # Discard windows only if mains has NaNs
+        if np.all(mains_valid[start_idx:end_idx]):
             x_windows.append(mains_norm[start_idx:end_idx, np.newaxis])
             y_power_windows.append(targets_power[start_idx:end_idx])
             y_onoff_windows.append(targets_onoff[start_idx:end_idx])
-            mask_windows.append(mask_vector)
+            mask_windows.append(targets_mask[start_idx:end_idx])
 
     if not x_windows:
         return (
             np.empty((0, window_length, 1), dtype=np.float32),
             np.empty((0, window_length, len(appliances)), dtype=np.float32),
             np.empty((0, window_length, len(appliances)), dtype=np.float32),
-            np.empty((0, len(appliances)), dtype=np.float32),
+            np.empty((0, window_length, len(appliances)), dtype=np.float32),
         )
 
     return (

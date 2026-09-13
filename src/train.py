@@ -257,17 +257,17 @@ def prepare_datasets(
     train_x = np.concatenate(x_train_list, axis=0) if x_train_list else np.zeros((0, config.window_length, 1))
     train_yp = np.concatenate(yp_train_list, axis=0) if yp_train_list else np.zeros((0, config.window_length, len(appliances)))
     train_yo = np.concatenate(yo_train_list, axis=0) if yo_train_list else np.zeros((0, config.window_length, len(appliances)))
-    train_m = np.concatenate(m_train_list, axis=0) if m_train_list else np.zeros((0, len(appliances)))
+    train_m = np.concatenate(m_train_list, axis=0) if m_train_list else np.zeros((0, config.window_length, len(appliances)))
 
     val_x = np.concatenate(x_val_list, axis=0) if x_val_list else np.zeros((0, config.window_length, 1))
     val_yp = np.concatenate(yp_val_list, axis=0) if yp_val_list else np.zeros((0, config.window_length, len(appliances)))
     val_yo = np.concatenate(yo_val_list, axis=0) if yo_val_list else np.zeros((0, config.window_length, len(appliances)))
-    val_m = np.concatenate(m_val_list, axis=0) if m_val_list else np.zeros((0, len(appliances)))
+    val_m = np.concatenate(m_val_list, axis=0) if m_val_list else np.zeros((0, config.window_length, len(appliances)))
 
     test_x = np.concatenate(x_test_list, axis=0) if x_test_list else np.zeros((0, config.window_length, 1))
     test_yp = np.concatenate(yp_test_list, axis=0) if yp_test_list else np.zeros((0, config.window_length, len(appliances)))
     test_yo = np.concatenate(yo_test_list, axis=0) if yo_test_list else np.zeros((0, config.window_length, len(appliances)))
-    test_m = np.concatenate(m_test_list, axis=0) if m_test_list else np.zeros((0, len(appliances)))
+    test_m = np.concatenate(m_test_list, axis=0) if m_test_list else np.zeros((0, config.window_length, len(appliances)))
 
     print(f"Generated windows -> Train: {len(train_x)}, Val: {len(val_x)}, Held-out Test: {len(test_x)}")
 
@@ -298,8 +298,16 @@ def compute_active_window_sampler(
     y_onoff = dataset.y_onoff  # (N, window_length, num_appliances)
     num_samples = len(y_onoff)
 
-    # Boolean mask: True if appliance k has at least one active timestep in window i
-    is_active_window = (y_onoff == 1.0).any(dim=1)  # (N, num_appliances)
+    # Boolean mask: True if appliance k has at least one valid active timestep in window i
+    if hasattr(dataset, "app_mask") and dataset.app_mask is not None:
+        if dataset.app_mask.dim() == 3:
+            is_active_window = ((y_onoff == 1.0) & (dataset.app_mask > 0.5)).any(dim=1)
+        elif dataset.app_mask.dim() == 2:
+            is_active_window = (y_onoff == 1.0).any(dim=1) & (dataset.app_mask > 0.5)
+        else:
+            is_active_window = (y_onoff == 1.0).any(dim=1)
+    else:
+        is_active_window = (y_onoff == 1.0).any(dim=1)  # (N, num_appliances)
     raw_freqs = is_active_window.float().mean(dim=0).cpu().numpy()
 
     # Under-represented appliances in this fold (microwave, dishwasher, washing machine, or < 25%)

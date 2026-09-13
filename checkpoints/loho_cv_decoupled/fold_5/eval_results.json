@@ -19,7 +19,8 @@
       "f1": 0.4858,
       "precision": 0.6608,
       "recall": 0.3841,
-      "accuracy": 0.8947
+      "accuracy": 0.8947,
+      "ap": 0.5776
     },
     "microwave": {
       "active_samples": 1480,
@@ -31,7 +32,8 @@
       "f1": 0.1869,
       "precision": 0.1667,
       "recall": 0.2128,
-      "accuracy": 0.9928
+      "accuracy": 0.9928,
+      "ap": 0.2638
     },
     "dishwasher": {
       "active_samples": 6279,
@@ -43,7 +45,8 @@
       "f1": 0.3635,
       "precision": 0.7693,
       "recall": 0.2379,
-      "accuracy": 0.9863
+      "accuracy": 0.9863,
+      "ap": 0.3202
     },
     "washing_machine": {
       "active_samples": 5983,
@@ -55,7 +58,8 @@
       "f1": 0.7309,
       "precision": 0.9127,
       "recall": 0.6096,
-      "accuracy": 0.993
+      "accuracy": 0.993,
+      "ap": 0.659
     }
   },
   "cross_household": {
@@ -69,7 +73,11 @@
       "f1": 0.0286,
       "precision": 0.5606,
       "recall": 0.0147,
-      "accuracy": 0.7517
+      "accuracy": 0.7517,
+      "ap": 0.4914,
+      "oracle_f1": 0.5977,
+      "oracle_threshold": 0.06,
+      "ceiling_gap": 0.5692
     },
     "microwave": {
       "active_samples": 1,
@@ -81,7 +89,11 @@
       "f1": 0.0,
       "precision": 0.0,
       "recall": 0.0,
-      "accuracy": 0.9568
+      "accuracy": 0.9568,
+      "ap": 0.0002,
+      "oracle_f1": 0.0,
+      "oracle_threshold": 0.01,
+      "ceiling_gap": 0.0
     },
     "dishwasher": {
       "active_samples": 494,
@@ -93,7 +105,11 @@
       "f1": 0.442,
       "precision": 0.3376,
       "recall": 0.6397,
-      "accuracy": 0.982
+      "accuracy": 0.982,
+      "ap": 0.4382,
+      "oracle_f1": 0.4647,
+      "oracle_threshold": 0.57,
+      "ceiling_gap": 0.0227
     },
     "washing_machine": {
       "active_samples": 0,
@@ -105,7 +121,11 @@
       "f1": NaN,
       "precision": NaN,
       "recall": NaN,
-      "accuracy": NaN
+      "accuracy": NaN,
+      "ap": NaN,
+      "oracle_f1": NaN,
+      "oracle_threshold": NaN,
+      "ceiling_gap": NaN
     }
   },
   "comparison_table": [

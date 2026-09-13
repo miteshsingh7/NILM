@@ -153,6 +153,8 @@ def build_loho_summary_table(
         metric_pools[f"{app}_in_f1"] = []
         metric_pools[f"{app}_cr_nde"] = []
         metric_pools[f"{app}_cr_f1"] = []
+        metric_pools[f"{app}_cr_ap"] = []
+        metric_pools[f"{app}_cr_oracle"] = []
 
     for h in range(1, 7):
         res = fold_results.get(h)
@@ -165,12 +167,15 @@ def build_loho_summary_table(
                 in_f1 = in_dist.get(app, {}).get("f1", np.nan)
                 cr_nde = cross.get(app, {}).get("nde", np.nan)
                 cr_f1 = cross.get(app, {}).get("f1", np.nan)
+                cr_ap = cross.get(app, {}).get("ap", np.nan)
+                cr_oracle = cross.get(app, {}).get("oracle_f1", np.nan)
 
                 # Format strings
-                row[f"{app[:4]}_In_NDE"] = f"{in_nde:.4f}" if not np.isnan(in_nde) else "N/A"
                 row[f"{app[:4]}_In_F1"] = f"{in_f1:.4f}" if not np.isnan(in_f1) else "N/A"
-                row[f"{app[:4]}_Cross_NDE"] = f"{cr_nde:.4f}" if not np.isnan(cr_nde) else "N/A"
-                row[f"{app[:4]}_Cross_F1"] = f"{cr_f1:.4f}" if not np.isnan(cr_f1) else "N/A"
+                row[f"{app[:4]}_Cr_AP"] = f"{cr_ap:.4f}" if not np.isnan(cr_ap) else "N/A"
+                row[f"{app[:4]}_Cr_F1"] = f"{cr_f1:.4f}" if not np.isnan(cr_f1) else "N/A"
+                row[f"{app[:4]}_Oracle"] = f"{cr_oracle:.4f}" if not np.isnan(cr_oracle) else "N/A"
+                row[f"{app[:4]}_Cr_NDE"] = f"{cr_nde:.4f}" if not np.isnan(cr_nde) else "N/A"
 
                 if not np.isnan(in_nde):
                     metric_pools[f"{app}_in_nde"].append(in_nde)
@@ -180,40 +185,49 @@ def build_loho_summary_table(
                     metric_pools[f"{app}_cr_nde"].append(cr_nde)
                 if not np.isnan(cr_f1):
                     metric_pools[f"{app}_cr_f1"].append(cr_f1)
+                if not np.isnan(cr_ap):
+                    metric_pools[f"{app}_cr_ap"].append(cr_ap)
+                if not np.isnan(cr_oracle):
+                    metric_pools[f"{app}_cr_oracle"].append(cr_oracle)
         else:
             for app in appliances:
-                row[f"{app[:4]}_In_NDE"] = "-"
                 row[f"{app[:4]}_In_F1"] = "-"
-                row[f"{app[:4]}_Cross_NDE"] = "-"
-                row[f"{app[:4]}_Cross_F1"] = "-"
+                row[f"{app[:4]}_Cr_AP"] = "-"
+                row[f"{app[:4]}_Cr_F1"] = "-"
+                row[f"{app[:4]}_Oracle"] = "-"
+                row[f"{app[:4]}_Cr_NDE"] = "-"
         table_rows.append(row)
 
     # Compute Mean Row
     mean_row: Dict[str, Any] = {"Held-Out House": "Aggregate Mean"}
     for app in appliances:
-        in_ndes = metric_pools[f"{app}_in_nde"]
         in_f1s = metric_pools[f"{app}_in_f1"]
         cr_ndes = metric_pools[f"{app}_cr_nde"]
         cr_f1s = metric_pools[f"{app}_cr_f1"]
+        cr_aps = metric_pools[f"{app}_cr_ap"]
+        cr_oracles = metric_pools[f"{app}_cr_oracle"]
 
-        mean_row[f"{app[:4]}_In_NDE"] = f"{np.mean(in_ndes):.4f}" if in_ndes else "N/A"
         mean_row[f"{app[:4]}_In_F1"] = f"{np.mean(in_f1s):.4f}" if in_f1s else "N/A"
-        mean_row[f"{app[:4]}_Cross_NDE"] = f"{np.mean(cr_ndes):.4f}" if cr_ndes else "N/A"
-        mean_row[f"{app[:4]}_Cross_F1"] = f"{np.mean(cr_f1s):.4f}" if cr_f1s else "N/A"
+        mean_row[f"{app[:4]}_Cr_AP"] = f"{np.mean(cr_aps):.4f}" if cr_aps else "N/A"
+        mean_row[f"{app[:4]}_Cr_F1"] = f"{np.mean(cr_f1s):.4f}" if cr_f1s else "N/A"
+        mean_row[f"{app[:4]}_Oracle"] = f"{np.mean(cr_oracles):.4f}" if cr_oracles else "N/A"
+        mean_row[f"{app[:4]}_Cr_NDE"] = f"{np.mean(cr_ndes):.4f}" if cr_ndes else "N/A"
     table_rows.append(mean_row)
 
     # Compute Range Row (min - max)
     range_row: Dict[str, Any] = {"Held-Out House": "Aggregate Range"}
     for app in appliances:
-        in_ndes = metric_pools[f"{app}_in_nde"]
         in_f1s = metric_pools[f"{app}_in_f1"]
         cr_ndes = metric_pools[f"{app}_cr_nde"]
         cr_f1s = metric_pools[f"{app}_cr_f1"]
+        cr_aps = metric_pools[f"{app}_cr_ap"]
+        cr_oracles = metric_pools[f"{app}_cr_oracle"]
 
-        range_row[f"{app[:4]}_In_NDE"] = f"[{np.min(in_ndes):.2f}, {np.max(in_ndes):.2f}]" if in_ndes else "N/A"
         range_row[f"{app[:4]}_In_F1"] = f"[{np.min(in_f1s):.2f}, {np.max(in_f1s):.2f}]" if in_f1s else "N/A"
-        range_row[f"{app[:4]}_Cross_NDE"] = f"[{np.min(cr_ndes):.2f}, {np.max(cr_ndes):.2f}]" if cr_ndes else "N/A"
-        range_row[f"{app[:4]}_Cross_F1"] = f"[{np.min(cr_f1s):.2f}, {np.max(cr_f1s):.2f}]" if cr_f1s else "N/A"
+        range_row[f"{app[:4]}_Cr_AP"] = f"[{np.min(cr_aps):.2f}, {np.max(cr_aps):.2f}]" if cr_aps else "N/A"
+        range_row[f"{app[:4]}_Cr_F1"] = f"[{np.min(cr_f1s):.2f}, {np.max(cr_f1s):.2f}]" if cr_f1s else "N/A"
+        range_row[f"{app[:4]}_Oracle"] = f"[{np.min(cr_oracles):.2f}, {np.max(cr_oracles):.2f}]" if cr_oracles else "N/A"
+        range_row[f"{app[:4]}_Cr_NDE"] = f"[{np.min(cr_ndes):.2f}, {np.max(cr_ndes):.2f}]" if cr_ndes else "N/A"
     table_rows.append(range_row)
 
     summary_df = pd.DataFrame(table_rows)

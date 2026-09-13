@@ -24,6 +24,7 @@ from src.data_pipeline import (
     NormalizationParams,
 )
 from src.model import MultiApplianceNILM
+from src.diagnostics import compute_phase0_diagnostics, format_phase0_diagnostic_table
 from src.utils import (
     compute_f1_score,
     compute_mae,
@@ -40,8 +41,8 @@ def evaluate_dataset(
     appliances: List[str],
     device: str = "cpu",
     batch_size: int = 128,
-) -> Dict[str, Dict[str, float]]:
-    """Evaluates a dataset and computes physical-Watt NDE, MAE, On/Off F1, and Predict-Zero baseline."""
+) -> Dict[str, Dict[str, Any]]:
+    """Evaluates a dataset and computes physical-Watt NDE, MAE, On/Off F1, AP, Oracle F1, and Predict-Zero baseline."""
     model.eval()
     dev = torch.device(device)
     model.to(dev)
@@ -52,12 +53,14 @@ def evaluate_dataset(
     power_trues_list = []
     onoff_preds_list = []
     onoff_trues_list = []
+    mask_trues_list = []
 
     with torch.no_grad():
         for batch in loader:
             x_b = batch[0].to(dev)
             yp_b = batch[1]
             yo_b = batch[2]
+            mask_b = batch[3] if len(batch) > 3 else torch.ones_like(yp_b)
 
             preds = model(x_b)
 
@@ -65,6 +68,7 @@ def evaluate_dataset(
             power_trues_list.append(yp_b.numpy())
             onoff_preds_list.append(preds["on_off"].cpu().numpy())
             onoff_trues_list.append(yo_b.numpy())
+            mask_trues_list.append(mask_b.numpy())
 
     if not power_preds_list:
         return {}
@@ -73,14 +77,21 @@ def evaluate_dataset(
     p_true = np.concatenate(power_trues_list, axis=0)
     o_pred = np.concatenate(onoff_preds_list, axis=0)
     o_true = np.concatenate(onoff_trues_list, axis=0)
+    m_true = np.concatenate(mask_trues_list, axis=0)
 
-    results: Dict[str, Dict[str, float]] = {}
+    results: Dict[str, Dict[str, Any]] = {}
 
     for i, app in enumerate(appliances):
+        if m_true.ndim == 3:
+            mask_app = m_true[..., i] > 0.5
+        elif m_true.ndim == 2:
+            mask_app = (m_true[:, i] > 0.5)[:, np.newaxis] & np.ones((len(m_true), p_pred.shape[1]), dtype=bool)
+        else:
+            mask_app = np.ones((len(p_pred), p_pred.shape[1]), dtype=bool)
+
         p_pred_norm = p_pred[..., i]
         p_true_norm = p_true[..., i]
 
-        # De-normalize predicted and ground truth power to physical Watts
         p_pred_watts = norm_params.denormalize_appliance(p_pred_norm, app)
         p_true_watts = norm_params.denormalize_appliance(p_true_norm, app)
 
@@ -90,47 +101,72 @@ def evaluate_dataset(
         # Hard gate at eval time: zero out predicted power whenever on/off head predicts "off"
         p_pred_watts = p_pred_watts * (o_pred_prob >= 0.5)
 
-        thresh = norm_params.appliance_stats.get(app, {}).get("threshold", 20.0)
-        active_cnt = int(np.sum(p_true_watts >= thresh))
+        # Filter strictly by valid mask
+        valid_p_true = p_true_watts[mask_app]
+        valid_p_pred = p_pred_watts[mask_app]
+        valid_o_true = o_true_bin[mask_app]
+        valid_o_pred = o_pred_prob[mask_app]
 
-        if active_cnt > 0:
-            nde = compute_nde(p_true_watts, p_pred_watts)
-            zero_pred = np.zeros_like(p_true_watts)
-            nde_zero_baseline = compute_nde(p_true_watts, zero_pred)
+        thresh = norm_params.appliance_stats.get(app, {}).get("threshold", 20.0)
+        active_cnt = int(np.sum(valid_p_true >= thresh))
+        valid_count = len(valid_p_true)
+
+        if valid_count > 0 and active_cnt > 0:
+            nde = compute_nde(valid_p_true, valid_p_pred)
+            zero_pred = np.zeros_like(valid_p_true)
+            nde_zero_baseline = compute_nde(valid_p_true, zero_pred)
             beats_zero = bool(nde < nde_zero_baseline)
-            clf_metrics = compute_f1_score(o_true_bin, o_pred_prob, threshold=0.5)
+            clf_metrics = compute_f1_score(valid_o_true, valid_o_pred, threshold=0.5)
+            # Phase 0 diagnostics
+            phase0_diag = compute_phase0_diagnostics(valid_o_true, valid_o_pred)
         else:
-            # Appliance had zero active events in this test split or was unmetered
             nde = np.nan
             nde_zero_baseline = 1.0
             beats_zero = False
             clf_metrics = {"f1": np.nan, "precision": np.nan, "recall": np.nan, "accuracy": np.nan}
+            phase0_diag = {
+                "ap": np.nan,
+                "oracle_f1": np.nan,
+                "oracle_threshold": np.nan,
+                "f1_at_50": np.nan,
+                "ceiling_gap": np.nan,
+                "active_timesteps": active_cnt,
+                "total_timesteps": valid_count,
+                "prevalence": 0.0,
+            }
 
-        mae = compute_mae(p_true_watts, p_pred_watts)
-        sae = compute_sae(p_true_watts, p_pred_watts)
+        mae = compute_mae(valid_p_true, valid_p_pred) if valid_count > 0 else np.nan
+        sae = compute_sae(valid_p_true, valid_p_pred) if valid_count > 0 else np.nan
 
         results[app] = {
+            "valid_samples": valid_count,
             "active_samples": active_cnt,
+            "prevalence": round(phase0_diag.get("prevalence", 0.0), 6),
             "predict_zero_nde": round(nde_zero_baseline, 4),
             "nde": round(nde, 4) if not np.isnan(nde) else np.nan,
             "beats_zero_baseline": beats_zero,
-            "mae_watts": round(mae, 2),
-            "sae": round(sae, 4),
-            "f1": round(clf_metrics["f1"], 4),
-            "precision": round(clf_metrics["precision"], 4),
-            "recall": round(clf_metrics["recall"], 4),
-            "accuracy": round(clf_metrics["accuracy"], 4),
+            "mae_watts": round(mae, 2) if not np.isnan(mae) else np.nan,
+            "sae": round(sae, 4) if not np.isnan(sae) else np.nan,
+            "f1": round(clf_metrics["f1"], 4) if not np.isnan(clf_metrics["f1"]) else np.nan,
+            "precision": round(clf_metrics["precision"], 4) if not np.isnan(clf_metrics["precision"]) else np.nan,
+            "recall": round(clf_metrics["recall"], 4) if not np.isnan(clf_metrics["recall"]) else np.nan,
+            "accuracy": round(clf_metrics["accuracy"], 4) if not np.isnan(clf_metrics["accuracy"]) else np.nan,
+            "ap": phase0_diag.get("ap", np.nan),
+            "oracle_f1": phase0_diag.get("oracle_f1", np.nan),
+            "oracle_threshold": phase0_diag.get("oracle_threshold", np.nan),
+            "ceiling_gap": phase0_diag.get("ceiling_gap", np.nan),
+            "pr_curve": phase0_diag.get("pr_curve", {}),
         }
 
     return results
 
 
 def format_comparison_table(
-    in_dist_metrics: Dict[str, Dict[str, float]],
-    cross_house_metrics: Dict[str, Dict[str, float]],
+    in_dist_metrics: Dict[str, Dict[str, Any]],
+    cross_house_metrics: Dict[str, Dict[str, Any]],
     appliances: List[str],
 ) -> pd.DataFrame:
-    """Formats side-by-side comparison between In-Distribution test, Cross-Household, and Predict-Zero."""
+    """Formats side-by-side comparison between In-Distribution test, Cross-Household, AP, and Oracle F1."""
     rows = []
     for app in appliances:
         in_m = in_dist_metrics.get(app, {})
@@ -145,19 +181,23 @@ def format_comparison_table(
         cr_f1 = cr_m.get("f1", np.nan)
         f1_gap = round(cr_f1 - in_f1, 4) if not np.isnan(cr_f1) and not np.isnan(in_f1) else np.nan
 
+        in_ap = in_m.get("ap", np.nan)
+        cr_ap = cr_m.get("ap", np.nan)
+        cr_oracle = cr_m.get("oracle_f1", np.nan)
+        cr_gap = cr_m.get("ceiling_gap", np.nan)
+
         in_mae = in_m.get("mae_watts", np.nan)
         cr_mae = cr_m.get("mae_watts", np.nan)
 
         rows.append({
             "Appliance": app,
-            "Predict-Zero NDE": zero_nde,
-            "In-Dist NDE": in_nde,
-            "Cross-House NDE": cr_nde,
-            "NDE Gap (Cross-In)": nde_gap,
+            "In-Dist AP": in_ap,
+            "Cross-House AP": cr_ap,
             "In-Dist F1": in_f1,
             "Cross-House F1": cr_f1,
-            "F1 Gap (Cross-In)": f1_gap,
-            "In-Dist MAE (W)": in_mae,
+            "Cross-House Oracle F1": cr_oracle,
+            "Ceiling Gap": cr_gap,
+            "Cross-House NDE": cr_nde,
             "Cross-House MAE (W)": cr_mae,
         })
 
@@ -262,12 +302,14 @@ def run_evaluation(
         in_dist_rows.append({
             "Appliance": app,
             "Active Samples": m.get("active_samples", 0),
-            "In-Dist NDE": m.get("nde", np.nan),
+            "In-Dist AP": m.get("ap", np.nan),
             "In-Dist F1": m.get("f1", np.nan),
+            "Oracle F1": m.get("oracle_f1", np.nan),
+            "Ceiling Gap": m.get("ceiling_gap", np.nan),
             "Precision": m.get("precision", np.nan),
             "Recall": m.get("recall", np.nan),
+            "In-Dist NDE": m.get("nde", np.nan),
             "In-Dist MAE (W)": m.get("mae_watts", np.nan),
-            "SAE": m.get("sae", np.nan),
         })
     in_dist_df = pd.DataFrame(in_dist_rows)
 
@@ -277,12 +319,14 @@ def run_evaluation(
         cross_house_rows.append({
             "Appliance": app,
             "Active Samples": m.get("active_samples", 0),
-            "Cross-House NDE": m.get("nde", np.nan),
+            "Cross-House AP": m.get("ap", np.nan),
             "Cross-House F1": m.get("f1", np.nan),
+            "Oracle F1": m.get("oracle_f1", np.nan),
+            "Ceiling Gap": m.get("ceiling_gap", np.nan),
             "Precision": m.get("precision", np.nan),
             "Recall": m.get("recall", np.nan),
+            "Cross-House NDE": m.get("nde", np.nan),
             "Cross-House MAE (W)": m.get("mae_watts", np.nan),
-            "SAE": m.get("sae", np.nan),
         })
     cross_house_df = pd.DataFrame(cross_house_rows)
 

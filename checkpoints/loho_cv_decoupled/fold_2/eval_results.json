@@ -19,7 +19,8 @@
       "f1": 0.3531,
       "precision": 0.7233,
       "recall": 0.2335,
-      "accuracy": 0.8832
+      "accuracy": 0.8832,
+      "ap": 0.498
     },
     "microwave": {
       "active_samples": 1481,
@@ -31,7 +32,8 @@
       "f1": 0.2147,
       "precision": 0.1962,
       "recall": 0.237,
-      "accuracy": 0.9936
+      "accuracy": 0.9936,
+      "ap": 0.2157
     },
     "dishwasher": {
       "active_samples": 6279,
@@ -43,7 +45,8 @@
       "f1": 0.0141,
       "precision": 0.4412,
       "recall": 0.0072,
-      "accuracy": 0.9844
+      "accuracy": 0.9844,
+      "ap": 0.2549
     },
     "washing_machine": {
       "active_samples": 5983,
@@ -55,7 +58,8 @@
       "f1": 0.5529,
       "precision": 0.6834,
       "recall": 0.4643,
-      "accuracy": 0.9889
+      "accuracy": 0.9889,
+      "ap": 0.529
     }
   },
   "cross_household": {
@@ -69,7 +73,11 @@
       "f1": 0.1251,
       "precision": 0.6422,
       "recall": 0.0693,
-      "accuracy": 0.7227
+      "accuracy": 0.7227,
+      "ap": 0.5083,
+      "oracle_f1": 0.6142,
+      "oracle_threshold": 0.25,
+      "ceiling_gap": 0.4891
     },
     "microwave": {
       "active_samples": 705,
@@ -81,7 +89,11 @@
       "f1": 0.725,
       "precision": 0.9027,
       "recall": 0.6057,
-      "accuracy": 0.9983
+      "accuracy": 0.9983,
+      "ap": 0.871,
+      "oracle_f1": 0.8173,
+      "oracle_threshold": 0.23,
+      "ceiling_gap": 0.0923
     },
     "dishwasher": {
       "active_samples": 2363,
@@ -93,7 +105,11 @@
       "f1": 0.0,
       "precision": 0.0,
       "recall": 0.0,
-      "accuracy": 0.9878
+      "accuracy": 0.9878,
+      "ap": 0.5405,
+      "oracle_f1": 0.5632,
+      "oracle_threshold": 0.23,
+      "ceiling_gap": 0.5632
     },
     "washing_machine": {
       "active_samples": 0,
@@ -105,7 +121,11 @@
       "f1": NaN,
       "precision": NaN,
       "recall": NaN,
-      "accuracy": NaN
+      "accuracy": NaN,
+      "ap": NaN,
+      "oracle_f1": NaN,
+      "oracle_threshold": NaN,
+      "ceiling_gap": NaN
     }
   },
   "comparison_table": [

@@ -19,7 +19,8 @@
       "f1": 0.032,
       "precision": 0.2552,
       "recall": 0.0171,
-      "accuracy": 0.8926
+      "accuracy": 0.8926,
+      "ap": 0.2559
     },
     "microwave": {
       "active_samples": 1481,
@@ -31,7 +32,8 @@
       "f1": 0.2964,
       "precision": 0.3918,
       "recall": 0.2384,
-      "accuracy": 0.9951
+      "accuracy": 0.9951,
+      "ap": 0.1968
     },
     "dishwasher": {
       "active_samples": 6278,
@@ -43,7 +45,8 @@
       "f1": 0.0,
       "precision": 0.0,
       "recall": 0.0,
-      "accuracy": 0.9816
+      "accuracy": 0.9816,
+      "ap": 0.1954
     },
     "washing_machine": {
       "active_samples": 5983,
@@ -55,7 +58,8 @@
       "f1": 0.4243,
       "precision": 0.4251,
       "recall": 0.4235,
-      "accuracy": 0.9799
+      "accuracy": 0.9799,
+      "ap": 0.4715
     }
   },
   "cross_household": {
@@ -69,7 +73,11 @@
       "f1": 0.0019,
       "precision": 0.0229,
       "recall": 0.001,
-      "accuracy": 0.6766
+      "accuracy": 0.6766,
+      "ap": 0.4781,
+      "oracle_f1": 0.6284,
+      "oracle_threshold": 0.19,
+      "ceiling_gap": 0.6265
     },
     "microwave": {
       "active_samples": 0,
@@ -81,7 +89,11 @@
       "f1": NaN,
       "precision": NaN,
       "recall": NaN,
-      "accuracy": NaN
+      "accuracy": NaN,
+      "ap": NaN,
+      "oracle_f1": NaN,
+      "oracle_threshold": NaN,
+      "ceiling_gap": NaN
     },
     "dishwasher": {
       "active_samples": 2,
@@ -93,7 +105,11 @@
       "f1": 0.0,
       "precision": 0.0,
       "recall": 0.0,
-      "accuracy": 1.0
+      "accuracy": 1.0,
+      "ap": 0.0,
+      "oracle_f1": 0.0,
+      "oracle_threshold": 0.01,
+      "ceiling_gap": 0.0
     },
     "washing_machine": {
       "active_samples": 51,
@@ -105,7 +121,11 @@
       "f1": 0.0,
       "precision": 0.0,
       "recall": 0.0,
-      "accuracy": 0.9961
+      "accuracy": 0.9961,
+      "ap": 0.001,
+      "oracle_f1": 0.0029,
+      "oracle_threshold": 0.03,
+      "ceiling_gap": 0.0029
     }
   },
   "comparison_table": [

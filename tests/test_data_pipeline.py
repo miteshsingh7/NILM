@@ -95,8 +95,9 @@ def test_sliding_window_shapes():
     assert y_o.shape[1] == 599
     assert y_o.shape[2] == len(appliances)
 
-    assert m.ndim == 2
-    assert m.shape[1] == len(appliances)
+    assert m.ndim == 3
+    assert m.shape[1] == 599
+    assert m.shape[2] == len(appliances)
 
     # Check dataset
     dataset = NILMDataset(x, y_p, y_o, m)
@@ -104,4 +105,4 @@ def test_sliding_window_shapes():
     x_item, yp_item, yo_item, m_item = dataset[0]
     assert isinstance(x_item, torch.Tensor)
     assert x_item.shape == (599, 1)
-    assert m_item.shape == (len(appliances),)
+    assert m_item.shape == (599, len(appliances))
