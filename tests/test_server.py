@@ -169,6 +169,16 @@ class TestServerEndpoints(AioHTTPTestCase):
         assert resp.status == 200
         data = await resp.json()
         assert "loho_cv_benchmark" in data
+        apps = {a["appliance"]: a for a in data["loho_cv_benchmark"]["appliances"]}
+        assert "Dishwasher" in apps
+        # Confirm dishwasher is calibrated, not uncalibrated 0.1779
+        assert apps["Dishwasher"]["f1_score"] == 0.3625
+        assert apps["Dishwasher"]["status"] == "CALIBRATED_OPTIMAL"
+        assert "Few-Shot" in apps["Dishwasher"]["calibration"]
+        assert "Refrigerator" in apps
+        assert apps["Refrigerator"]["f1_score"] == 0.4697
+        if "combined_phase7_benchmark" in data:
+            assert "appliances" in data["combined_phase7_benchmark"]
 
     @unittest_run_loop
     async def test_api_export(self) -> None:

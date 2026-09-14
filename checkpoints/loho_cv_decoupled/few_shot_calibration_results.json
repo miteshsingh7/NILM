@@ -46,5 +46,72 @@
       "oracle_f1": 0.6284,
       "always_on_f1": 0.4824
     }
+  },
+  "dishwasher": {
+    "appliance": "dishwasher",
+    "window_hours": 24,
+    "mean_f1": 0.3625,
+    "mean_recall": 0.5144,
+    "mean_precision": 0.3577,
+    "harmonic_f1": 0.4218,
+    "oracle_ceiling_f1": 0.3981,
+    "calibration": "24h Chronological Few-Shot (\u03c4*\u22480.23)",
+    "status": "CALIBRATED_OPTIMAL",
+    "evaluated_houses": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "excluded_houses": [
+      5,
+      6
+    ],
+    "exclusion_reasons": {
+      "5": "Zero active samples in post-24h evaluation window (all 494 active timesteps occurred in first 24h)",
+      "6": "Degenerate test signal (only 2 active timesteps across multi-week recording)"
+    },
+    "folds": {
+      "1": {
+        "tau": 0.04,
+        "f1": 0.3502,
+        "recall": 0.3097,
+        "precision": 0.4028,
+        "oracle_f1": 0.3606,
+        "fixed_f1": 0.0777,
+        "calib_active_samples": 1036,
+        "eval_active_samples": 16483
+      },
+      "2": {
+        "tau": 0.23,
+        "f1": 0.5719,
+        "recall": 0.489,
+        "precision": 0.6885,
+        "oracle_f1": 0.5738,
+        "fixed_f1": 0.0,
+        "calib_active_samples": 451,
+        "eval_active_samples": 1912
+      },
+      "3": {
+        "tau": 0.14,
+        "f1": 0.1547,
+        "recall": 0.5086,
+        "precision": 0.0912,
+        "oracle_f1": 0.2402,
+        "fixed_f1": 0.1893,
+        "calib_active_samples": 264,
+        "eval_active_samples": 2206
+      },
+      "4": {
+        "tau": 0.5,
+        "f1": 0.3732,
+        "recall": 0.7503,
+        "precision": 0.2484,
+        "oracle_f1": 0.4176,
+        "fixed_f1": 0.3732,
+        "calib_active_samples": 0,
+        "eval_active_samples": 2423
+      }
+    }
   }
 }
