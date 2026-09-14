@@ -175,6 +175,7 @@ class NILMConfig:
     focal_gamma: float = 2.0      # Focusing parameter gamma
     focal_alpha: float = 0.25     # Balance parameter alpha
     focal_appliances: Optional[List[str]] = None  # Specific appliances for focal loss
+    grad_clip_norm: float = 2.0   # Maximum gradient norm threshold for clipping
 
     # Device resolution: check capability >= 7.0 to prevent sm_60 crash on PyTorch 2.10+
     @staticmethod

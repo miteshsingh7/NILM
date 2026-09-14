@@ -62,6 +62,10 @@ def evaluate_dataset(
             yo_b = batch[2]
             mask_b = batch[3] if len(batch) > 3 else torch.ones_like(yp_b)
 
+            assert next(model.parameters()).device == x_b.device, (
+                f"Device mismatch: model is on {next(model.parameters()).device}, input is on {x_b.device}"
+            )
+
             preds = model(x_b)
 
             power_preds_list.append(preds["power"].cpu().numpy())

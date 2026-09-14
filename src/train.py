@@ -561,6 +561,8 @@ def train_model(
         model.train()
         train_loss_sum = 0.0
         train_batches = 0
+        train_grad_norm_sum = 0.0
+        train_grad_norm_max = 0.0
         train_app_loss_sums = {app: 0.0 for app in config.appliances}
         train_app_mse_sums = {app: 0.0 for app in config.appliances}
         train_app_bce_sums = {app: 0.0 for app in config.appliances}
@@ -591,8 +593,28 @@ def train_model(
                 )
 
             scaler.scale(loss).backward()
+            if use_amp:
+                scaler.unscale_(optimizer)
+
+            grad_clip_norm = getattr(config, "grad_clip_norm", 2.0)
+            grad_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=grad_clip_norm)
             scaler.step(optimizer)
             scaler.update()
+
+            grad_norm_val = float(grad_norm.item() if hasattr(grad_norm, "item") else grad_norm)
+            train_grad_norm_sum += grad_norm_val
+            train_grad_norm_max = max(train_grad_norm_max, grad_norm_val)
+
+            # Strict NaN/Inf guard after optimizer step
+            bad_param_names = []
+            for p_name, p_tensor in model.named_parameters():
+                if torch.isnan(p_tensor).any() or torch.isinf(p_tensor).any():
+                    bad_param_names.append(p_name)
+            if bad_param_names:
+                raise RuntimeError(
+                    f"FATAL: NaN/Inf detected in {len(bad_param_names)} parameter tensors at Epoch {epoch}, "
+                    f"batch {train_batches}: {bad_param_names[:5]}... Halting training immediately."
+                )
 
             train_loss_sum += loss.item()
             train_batches += 1
@@ -647,9 +669,12 @@ def train_model(
         current_lr = optimizer.param_groups[0]["lr"]
         scheduler.step(avg_val_loss)
 
+        avg_grad_norm = train_grad_norm_sum / max(1, train_batches)
         history["train_loss"].append(round(avg_train_loss, 4))
         history["val_loss"].append(round(avg_val_loss, 4))
         history["lr"].append(current_lr)
+        history.setdefault("grad_norm", []).append(round(avg_grad_norm, 4))
+        history.setdefault("max_grad_norm", []).append(round(train_grad_norm_max, 4))
 
         # Record per-appliance breakdowns
         app_summary_parts = []
@@ -672,9 +697,12 @@ def train_model(
 
         print(
             f"Epoch [{epoch:02d}/{config.epochs:02d}] "
-            f"Total Train: {avg_train_loss:.4f} | Total Val: {avg_val_loss:.4f} | LR: {current_lr:.1e} | "
+            f"Total Train: {avg_train_loss:.4f} | Total Val: {avg_val_loss:.4f} | "
+            f"Grad Norm: {avg_grad_norm:.4f} (max: {train_grad_norm_max:.4f}) | "
+            f"LR: {current_lr:.1e} | "
             + " | ".join(app_summary_parts)
         )
+
 
         # Checkpoint: save latest
         save_checkpoint(

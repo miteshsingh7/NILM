@@ -104,6 +104,12 @@ def save_checkpoint(
     filepath.parent.mkdir(parents=True, exist_ok=True)
 
     raw_model = model.module if hasattr(model, "module") else model
+
+    # Strict NaN/Inf guard before saving checkpoint to disk
+    for p_name, p_tensor in raw_model.named_parameters():
+        if torch.isnan(p_tensor).any() or torch.isinf(p_tensor).any():
+            raise RuntimeError(f"FATAL: Attempted to save corrupted checkpoint containing NaN/Inf tensor: {p_name}")
+
     metadata = dict(extra_metadata) if extra_metadata else {}
     if run_hash:
         metadata["run_hash"] = run_hash
