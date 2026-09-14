@@ -1,0 +1,517 @@
+{
+  "description": "Combined Phase 7 Architecture Benchmark (GroupNorm + DecoupledTemporal + LossMasking + Calibration)",
+  "device": "mps",
+  "seed": 42,
+  "folds_verified_clean": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+  ],
+  "grand_benchmark_static_50": {
+    "fold_1": {
+      "fridge": {
+        "f1": 0.4129,
+        "ap": 0.3534,
+        "nde": 0.9261,
+        "oracle_f1": 0.4759
+      },
+      "microwave": {
+        "f1": 0.3383,
+        "ap": 0.2576,
+        "nde": 1.0008,
+        "oracle_f1": 0.3721
+      },
+      "dishwasher": {
+        "f1": 0.289,
+        "ap": 0.4191,
+        "nde": 0.979,
+        "oracle_f1": 0.4966
+      },
+      "washing_machine": {
+        "f1": 0.3913,
+        "ap": 0.2675,
+        "nde": 1.024,
+        "oracle_f1": 0.4113
+      }
+    },
+    "fold_2": {
+      "fridge": {
+        "f1": 0.6426,
+        "ap": 0.5875,
+        "nde": 0.7161,
+        "oracle_f1": 0.7022
+      },
+      "microwave": {
+        "f1": 0.7723,
+        "ap": 0.9132,
+        "nde": 0.6789,
+        "oracle_f1": 0.9115
+      },
+      "dishwasher": {
+        "f1": 0.5554,
+        "ap": 0.8004,
+        "nde": 0.7402,
+        "oracle_f1": 0.7928
+      },
+      "washing_machine": {
+        "f1": NaN,
+        "ap": NaN,
+        "nde": NaN,
+        "oracle_f1": NaN
+      }
+    },
+    "fold_3": {
+      "fridge": {
+        "f1": 0.0743,
+        "ap": 0.0565,
+        "nde": 0.9855,
+        "oracle_f1": 0.1514
+      },
+      "microwave": {
+        "f1": 0.4904,
+        "ap": 0.3372,
+        "nde": 1.0935,
+        "oracle_f1": 0.4971
+      },
+      "dishwasher": {
+        "f1": 0.2158,
+        "ap": 0.1385,
+        "nde": 2.2394,
+        "oracle_f1": 0.261
+      },
+      "washing_machine": {
+        "f1": 0.4826,
+        "ap": 0.508,
+        "nde": 0.6246,
+        "oracle_f1": 0.5404
+      }
+    },
+    "fold_4": {
+      "fridge": {
+        "f1": NaN,
+        "ap": NaN,
+        "nde": NaN,
+        "oracle_f1": NaN
+      },
+      "microwave": {
+        "f1": NaN,
+        "ap": NaN,
+        "nde": NaN,
+        "oracle_f1": NaN
+      },
+      "dishwasher": {
+        "f1": 0.3996,
+        "ap": 0.2362,
+        "nde": 0.989,
+        "oracle_f1": 0.4196
+      },
+      "washing_machine": {
+        "f1": 0.0,
+        "ap": 0.0212,
+        "nde": 1.0002,
+        "oracle_f1": 0.0547
+      }
+    },
+    "fold_5": {
+      "fridge": {
+        "f1": 0.551,
+        "ap": 0.5563,
+        "nde": 0.7971,
+        "oracle_f1": 0.6264
+      },
+      "microwave": {
+        "f1": 0.0,
+        "ap": 0.0001,
+        "nde": 4.7642,
+        "oracle_f1": 0.0
+      },
+      "dishwasher": {
+        "f1": 0.1925,
+        "ap": 0.2198,
+        "nde": 1.1557,
+        "oracle_f1": 0.3812
+      },
+      "washing_machine": {
+        "f1": NaN,
+        "ap": NaN,
+        "nde": NaN,
+        "oracle_f1": NaN
+      }
+    },
+    "fold_6": {
+      "fridge": {
+        "f1": 0.0192,
+        "ap": 0.5278,
+        "nde": 0.9976,
+        "oracle_f1": 0.6671
+      },
+      "microwave": {
+        "f1": NaN,
+        "ap": NaN,
+        "nde": NaN,
+        "oracle_f1": NaN
+      },
+      "dishwasher": {
+        "f1": 0.0,
+        "ap": 0.0,
+        "nde": 1.0,
+        "oracle_f1": 0.0
+      },
+      "washing_machine": {
+        "f1": 0.0,
+        "ap": 0.0012,
+        "nde": 27.425,
+        "oracle_f1": 0.0021
+      }
+    }
+  },
+  "sanitized_benchmark_static_50": {
+    "fridge": {
+      "sanitized_f1": 0.34,
+      "sanitized_ap": 0.4163,
+      "sanitized_nde": 0.8845,
+      "active_test_houses": [
+        1,
+        2,
+        3,
+        5,
+        6
+      ]
+    },
+    "microwave": {
+      "sanitized_f1": 0.5337,
+      "sanitized_ap": 0.5027,
+      "sanitized_nde": 0.9244,
+      "active_test_houses": [
+        1,
+        2,
+        3
+      ]
+    },
+    "dishwasher": {
+      "sanitized_f1": 0.3649,
+      "sanitized_ap": 0.3986,
+      "sanitized_nde": 1.2369,
+      "active_test_houses": [
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    "washing_machine": {
+      "sanitized_f1": 0.2913,
+      "sanitized_ap": 0.2656,
+      "sanitized_nde": 0.8829,
+      "active_test_houses": [
+        1,
+        3,
+        4
+      ]
+    }
+  },
+  "protocol_a_p10_adaptation": {
+    "1": {
+      "p10_target": 0.0,
+      "mean_p10_source": 92.08637112000001,
+      "theta_p10": 0.38949635465599997,
+      "f1_at_50": 0.4129,
+      "f1_p10": 0.4207609512939647,
+      "oracle_f1": 0.4759,
+      "recovered_pct": 88.41373214834307
+    },
+    "2": {
+      "p10_target": 37.251667,
+      "mean_p10_source": 84.63603772000002,
+      "theta_p10": 0.443138755136,
+      "f1_at_50": 0.6426,
+      "f1_p10": 0.6693602693602694,
+      "oracle_f1": 0.7022,
+      "recovered_pct": 95.32330808320555
+    },
+    "3": {
+      "p10_target": 117.210835,
+      "mean_p10_source": 68.64420412,
+      "theta_p10": 0.558279957056,
+      "f1_at_50": 0.0743,
+      "f1_p10": 0.07456896551724138,
+      "oracle_f1": 0.1514,
+      "recovered_pct": 49.252949482986374
+    },
+    "4": {
+      "p10_target": 0.0,
+      "mean_p10_source": 92.08637112000001,
+      "theta_p10": 0.38949635465599997,
+      "f1_at_50": NaN,
+      "f1_p10": NaN,
+      "oracle_f1": NaN,
+      "recovered_pct": NaN
+    },
+    "5": {
+      "p10_target": 180.63335,
+      "mean_p10_source": 55.95970112,
+      "theta_p10": 0.649608378656,
+      "f1_at_50": 0.551,
+      "f1_p10": 0.0,
+      "oracle_f1": 0.6264,
+      "recovered_pct": 0.0
+    },
+    "6": {
+      "p10_target": 125.3360036,
+      "mean_p10_source": 67.01917040000001,
+      "theta_p10": 0.56998019984,
+      "f1_at_50": 0.0192,
+      "f1_p10": 0.0,
+      "oracle_f1": 0.6671,
+      "recovered_pct": 0.0
+    }
+  },
+  "protocol_b_commissioning_shrinkage": {
+    "1": {
+      "fridge": {
+        "f1": 0.4703158528780634,
+        "precision": 0.3138370219378362,
+        "recall": 0.9380034537868306,
+        "oracle_f1": 0.4731,
+        "oracle_th": 0.07,
+        "theta_shrink": 0.11224447513812155,
+        "n_active_calib": 8638,
+        "alpha": 0.9942449355432781
+      },
+      "microwave": {
+        "f1": 0.35721393034825877,
+        "precision": 0.47081967213114756,
+        "recall": 0.28777555110220443,
+        "oracle_f1": 0.362,
+        "oracle_th": 0.04,
+        "theta_shrink": 0.17683168316831685,
+        "n_active_calib": 960,
+        "alpha": 0.9504950495049505
+      },
+      "dishwasher": {
+        "f1": 0.46674537583628484,
+        "precision": 0.832735216102356,
+        "recall": 0.3242405832320778,
+        "oracle_f1": 0.4833,
+        "oracle_th": 0.04,
+        "theta_shrink": 0.10474158368895213,
+        "n_active_calib": 4168,
+        "alpha": 0.9881460407776197
+      },
+      "washing_machine": {
+        "f1": 0.40580657817302035,
+        "precision": 0.49199302362454417,
+        "recall": 0.34531493434231025,
+        "oracle_f1": 0.4202,
+        "oracle_th": 0.85,
+        "theta_shrink": 0.5,
+        "n_active_calib": 0,
+        "alpha": 0.0
+      }
+    },
+    "2": {
+      "fridge": {
+        "f1": 0.6890835332467263,
+        "precision": 0.5969015795868773,
+        "recall": 0.8149376967594775,
+        "oracle_f1": 0.702,
+        "oracle_th": 0.24,
+        "theta_shrink": 0.23129995185363506,
+        "n_active_calib": 10335,
+        "alpha": 0.9951853635050554
+      },
+      "microwave": {
+        "f1": 0.769620253164557,
+        "precision": 0.9212121212121213,
+        "recall": 0.6608695652173913,
+        "oracle_f1": 0.9135,
+        "oracle_th": 0.16,
+        "theta_shrink": 0.5054545454545454,
+        "n_active_calib": 60,
+        "alpha": 0.5454545454545454
+      },
+      "dishwasher": {
+        "f1": 0.7607667413492657,
+        "precision": 0.7258907363420427,
+        "recall": 0.799163179916318,
+        "oracle_f1": 0.7752,
+        "oracle_th": 0.15,
+        "theta_shrink": 0.1204669887278583,
+        "n_active_calib": 1813,
+        "alpha": 0.9731615673644659
+      },
+      "washing_machine": {
+        "f1": NaN,
+        "oracle_f1": NaN,
+        "theta_shrink": 0.5,
+        "n_active_calib": 0,
+        "alpha": 0.0
+      }
+    },
+    "3": {
+      "fridge": {
+        "f1": 0.07166821994408201,
+        "precision": 0.042810221009853586,
+        "recall": 0.21990277380611953,
+        "oracle_f1": 0.1529,
+        "oracle_th": 0.33,
+        "theta_shrink": 0.5357894736842106,
+        "n_active_calib": 425,
+        "alpha": 0.8947368421052632
+      },
+      "microwave": {
+        "f1": 0.44817255841821446,
+        "precision": 0.4369158878504673,
+        "recall": 0.46002460024600245,
+        "oracle_f1": 0.5194,
+        "oracle_th": 0.45,
+        "theta_shrink": 0.5885714285714285,
+        "n_active_calib": 62,
+        "alpha": 0.5535714285714286
+      },
+      "dishwasher": {
+        "f1": 0.2920715392198282,
+        "precision": 0.22277121374865735,
+        "recall": 0.42395748160261654,
+        "oracle_f1": 0.3045,
+        "oracle_th": 0.35,
+        "theta_shrink": 0.5,
+        "n_active_calib": 0,
+        "alpha": 0.0
+      },
+      "washing_machine": {
+        "f1": 0.48507980569049275,
+        "precision": 0.9595058339052849,
+        "recall": 0.3245878801950313,
+        "oracle_f1": 0.5409,
+        "oracle_th": 0.2,
+        "theta_shrink": 0.5,
+        "n_active_calib": 0,
+        "alpha": 0.0
+      }
+    },
+    "4": {
+      "fridge": {
+        "f1": NaN,
+        "oracle_f1": NaN,
+        "theta_shrink": 0.5,
+        "n_active_calib": 0,
+        "alpha": 0.0
+      },
+      "microwave": {
+        "f1": NaN,
+        "oracle_f1": NaN,
+        "theta_shrink": 0.5,
+        "n_active_calib": 0,
+        "alpha": 0.0
+      },
+      "dishwasher": {
+        "f1": 0.39509484575589193,
+        "precision": 0.2564995646224655,
+        "recall": 0.8595248020008337,
+        "oracle_f1": 0.4048,
+        "oracle_th": 0.61,
+        "theta_shrink": 0.5,
+        "n_active_calib": 0,
+        "alpha": 0.0
+      },
+      "washing_machine": {
+        "f1": 0.03797865662272442,
+        "precision": 0.05129292072912251,
+        "recall": 0.03015200598056317,
+        "oracle_f1": 0.0719,
+        "oracle_th": 0.08,
+        "theta_shrink": 0.10723589001447179,
+        "n_active_calib": 2714,
+        "alpha": 0.9819102749638206
+      }
+    },
+    "5": {
+      "fridge": {
+        "f1": 0.6063493655649732,
+        "precision": 0.5115944482058226,
+        "recall": 0.7441831835528746,
+        "oracle_f1": 0.6097,
+        "oracle_th": 0.17,
+        "theta_shrink": 0.19137924897668626,
+        "n_active_calib": 11188,
+        "alpha": 0.995550809752625
+      },
+      "microwave": {
+        "f1": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "oracle_f1": 0.0,
+        "oracle_th": 0.01,
+        "theta_shrink": 0.5,
+        "n_active_calib": 0,
+        "alpha": 0.0
+      },
+      "dishwasher": {
+        "f1": NaN,
+        "oracle_f1": NaN,
+        "theta_shrink": 0.15858684985279686,
+        "n_active_calib": 1988,
+        "alpha": 0.9754661432777233
+      },
+      "washing_machine": {
+        "f1": NaN,
+        "oracle_f1": NaN,
+        "theta_shrink": 0.5,
+        "n_active_calib": 0,
+        "alpha": 0.0
+      }
+    },
+    "6": {
+      "fridge": {
+        "f1": 0.6649798901781545,
+        "precision": 0.5325011074559015,
+        "recall": 0.8852069148679318,
+        "oracle_f1": 0.6728,
+        "oracle_th": 0.05,
+        "theta_shrink": 0.10203190084323883,
+        "n_active_calib": 9793,
+        "alpha": 0.9949202478919029
+      },
+      "microwave": {
+        "f1": NaN,
+        "oracle_f1": NaN,
+        "theta_shrink": 0.5,
+        "n_active_calib": 0,
+        "alpha": 0.0
+      },
+      "dishwasher": {
+        "f1": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "oracle_f1": 0.0,
+        "oracle_th": 0.01,
+        "theta_shrink": 0.5,
+        "n_active_calib": 0,
+        "alpha": 0.0
+      },
+      "washing_machine": {
+        "f1": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "oracle_f1": 0.0022,
+        "oracle_th": 0.02,
+        "theta_shrink": 0.5,
+        "n_active_calib": 0,
+        "alpha": 0.0
+      }
+    }
+  },
+  "headline_fridge_comparison": {
+    "v3_plain_baseline_5fold_mean": 0.4697,
+    "phase7_isolated_claim_5fold_mean": 0.481,
+    "combined_static_50_sanitized_5fold_mean": 0.34,
+    "combined_protocol_a_p10_5fold_mean": 0.2329,
+    "combined_protocol_b_shrinkage_5fold_mean": 0.5005,
+    "relative_gain_vs_v3": "+6.56%",
+    "absolute_gain_vs_phase7_claim": "+0.0195"
+  }
+}

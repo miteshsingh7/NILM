@@ -58,6 +58,7 @@ checkpoints/loho_cv_decoupled/*/latest_checkpoint.pt
 !checkpoints/loho_cv_phase3_multiscale
 !checkpoints/loho_cv_phase3_multiscale/*.json
 !checkpoints/loho_cv_phase3_multiscale/*/*.json
+!checkpoints/loho_cv_combined_phase7/loho_combined_phase7_summary.json
 checkpoints_ukdale/
 
 # Other dev folders
