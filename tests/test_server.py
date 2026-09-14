@@ -179,6 +179,28 @@ class TestServerEndpoints(AioHTTPTestCase):
         assert apps["Refrigerator"]["f1_score"] == 0.4697
         if "combined_phase7_benchmark" in data:
             assert "appliances" in data["combined_phase7_benchmark"]
+            p7_apps = {a["appliance"]: a for a in data["combined_phase7_benchmark"]["appliances"]}
+            assert "Refrigerator" in p7_apps
+            assert p7_apps["Refrigerator"]["status"] == "VERIFIED_GAIN"
+            assert p7_apps["Refrigerator"]["relative_gain"] == "+6.56%"
+            assert "note" in p7_apps["Refrigerator"] and len(p7_apps["Refrigerator"]["note"]) > 0
+
+            assert "Dishwasher" in p7_apps
+            assert p7_apps["Dishwasher"]["status"] == "VERIFIED_GAIN"
+            assert p7_apps["Dishwasher"]["relative_gain"] == "+32.05%"
+            assert "note" in p7_apps["Dishwasher"] and len(p7_apps["Dishwasher"]["note"]) > 0
+
+            assert "Microwave" in p7_apps
+            assert p7_apps["Microwave"]["status"] == "NOT_VALIDATED"
+            assert p7_apps["Microwave"]["v3_baseline_f1"] == 0.5315
+            assert p7_apps["Microwave"]["relative_gain"] == "-1.22%"
+            assert "note" in p7_apps["Microwave"] and len(p7_apps["Microwave"]["note"]) > 0
+
+            assert "Washing Machine" in p7_apps
+            assert p7_apps["Washing Machine"]["status"] == "NOT_VALIDATED"
+            assert p7_apps["Washing Machine"]["v3_baseline_f1"] == 0.3112
+            assert p7_apps["Washing Machine"]["relative_gain"] == "-0.51%"
+            assert "note" in p7_apps["Washing Machine"] and len(p7_apps["Washing Machine"]["note"]) > 0
 
     @unittest_run_loop
     async def test_api_export(self) -> None:
