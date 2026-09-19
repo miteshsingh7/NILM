@@ -34,3 +34,11 @@ checkpoints/ukdale*
 checkpoints/best_model.pt
 checkpoints/latest_checkpoint.pt
 checkpoints/loho_cv_decoupled/*/latest_checkpoint.pt
+checkpoints/loho_cv_combined_phase7/combined_phase7_full_results.json
+checkpoints/loho_cv_combined_phase7/retrained_phase7_full_results.json
+checkpoints/loho_cv_phase3_multiscale/
+checkpoints/loho_cv_groupnorm/
+checkpoints/loho_cv_decoupled_temporal/
+
+# Scratch and debug artifacts
+scratch/

@@ -8,6 +8,13 @@
 **Artifact Directory:** `/Users/miteshsingh/Documents/projects/NILM/checkpoints/loho_cv_combined_phase7/`  
 **Log Reference:** `/Users/miteshsingh/.gemini/antigravity/brain/29037bad-432f-4677-8b54-f04e3d4a26ed/.system_generated/tasks/task-9606.log`
 
+> [!WARNING]
+> **SUPERSEDED EXPERIMENTAL REPORT — AUDIT RECONCILIATION NOTICE (2026-09-19)**:
+> This report documents the initial un-retrained Phase 7 run (`158c0c86...`), which has been superseded by subsequent forensic investigations:
+> 1. **Fridge Folds 5 & 6 Retraining**: Folds 5 & 6 originally suffered gradient explosion (NaN weights). Retraining with gradient clipping ([`RETRAINING_FOLDS_5_6_AND_REAL_FRIDGE_REPORT.md`](file:///Users/miteshsingh/Documents/projects/NILM/RETRAINING_FOLDS_5_6_AND_REAL_FRIDGE_REPORT.md)) brought Fridge 5-fold evaluated F1 to **0.5005** (+6.56%, **`VERIFIED_GAIN`**).
+> 2. **Dishwasher Calibration**: Fixed in endpoint to use calibrated 0.3625 baseline, achieving **0.4787** under Protocol B (+32.05%, **`VERIFIED_GAIN`**) ([`DISHWASHER_CALIBRATION_AND_MULTIAPPLIANCE_PROTOCOL_B_REPORT.md`](file:///Users/miteshsingh/Documents/projects/NILM/DISHWASHER_CALIBRATION_AND_MULTIAPPLIANCE_PROTOCOL_B_REPORT.md)).
+> 3. **Microwave & Washing Machine Baselines**: The baselines originally cited here (0.3986 and 0.2334) were unrestricted 6-fold averages containing zero-signal folds. Same-house v3 baselines are **0.5315** (Microwave Houses 1, 2, 3, achieving 0.5250, -1.22%) and **0.3112** (Washing Machine Houses 1, 3, 4, achieving 0.3096, -0.51%). Both are marked **`NOT_VALIDATED`** in `app/server.py`.
+
 ---
 
 ## Executive Summary: Why This Run Exists & Core Findings

@@ -20,10 +20,10 @@ def main():
         "washing_machine": [1, 3, 4],
     }
     v3_baselines = {
-        "fridge": 0.4697,
-        "microwave": 0.3986,
-        "dishwasher": 0.3625,
-        "washing_machine": 0.2334,
+        "fridge": 0.4697,  # 24h calibrated baseline across evaluable houses [1, 2, 3, 5, 6]
+        "microwave": 0.5315,  # Same-house v3 baseline across evaluable houses [1, 2, 3]
+        "dishwasher": 0.3625,  # 24h calibrated baseline across evaluable houses [1, 2, 3, 4]
+        "washing_machine": 0.3112,  # Same-house v3 baseline across evaluable houses [1, 3, 4]
     }
 
     import sys
@@ -118,21 +118,24 @@ def main():
         print(f"  Evaluable Houses Included    : {metered_houses[app]} ({len(evaluable_f1s)} folds)")
         print(f"  Macro-Averaged Eval F1       : {mean_f1:.4f}")
         print(f"  Oracle Ceiling F1            : {mean_orc:.4f} (Ceiling Recovery: {ceil_rec:.2f}%)")
-        print(f"  v3 Baseline F1               : {v3_base:.4f}")
+        status_str = "VERIFIED_GAIN" if rel_gain > 0 else "NOT_VALIDATED"
+        print(f"  v3 Baseline F1 (Same-House)  : {v3_base:.4f}")
         print(f"  Absolute Improvement (Delta) : {delta:+.4f}")
         print(f"  Relative Gain                : {rel_gain:+.2f}%")
+        print(f"  Status                       : {status_str}")
 
     print("\n" + "=" * 130)
-    print("                     INDEPENDENT COMPUTATION SANITY CHECK (SECTION 3)")
+    print("                     SAME-HOUSE BASELINE COMPARISON & STATUS (SECTION 3)")
     print("=" * 130)
-    for app in ["microwave", "dishwasher", "washing_machine"]:
+    for app in ["fridge", "microwave", "dishwasher", "washing_machine"]:
         folds = metered_houses[app]
         f1_list = [shrink[str(f)][app]["f1"] for f in folds if not np.isnan(shrink[str(f)][app]["f1"])]
         mean_val = np.mean(f1_list)
         base_val = v3_baselines[app]
         num = mean_val - base_val
         rel = (num / base_val) * 100
-        print(f"{app:<16s}: Mean F1 = {mean_val:.6f}, Base = {base_val:.4f} | Numerator = {num:+.6f}, Denom = {base_val:.4f} -> Relative = {rel:+.4f}%")
+        status_str = "VERIFIED_GAIN" if rel > 0 else "NOT_VALIDATED"
+        print(f"{app:<16s}: Mean F1 = {mean_val:.6f}, Base = {base_val:.4f} | Diff = {num:+.6f} ({rel:+.2f}%) -> Status = {status_str}")
 
 if __name__ == "__main__":
     main()

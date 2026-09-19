@@ -17,20 +17,28 @@ Following the forensic audit that revealed gradient explosion and NaN corruption
 
 3. **Definitive Refrigerator Performance vs Baselines**:
    - Under **Protocol B (Commissioning James-Stein Shrinkage Calibration)** on held-out `[24h:end]`:
-     - **Retrained Combined Architecture**: **0.5005** (95.86% of Oracle Ceiling 0.5221)
-     - **v3 Baseline (BatchNorm, 24h calibration)**: **0.4697**
-     - **Phase 7 Report Claim (Isolated run)**: **0.4810**
-     - **Verdict**: **The retrained combined architecture BEATS the v3 baseline (+0.0308, +6.56% relative gain) AND BEATS the Phase 7 claim (+0.0195).**
-     - Every single evaluable fold beats or matches its v3 counterpart:
-       - House 1: **0.4703** vs 0.4365 (+0.0338)
-       - House 2: **0.6891** vs 0.6159 (+0.0732)
-       - House 3: **0.0717** vs 0.0710 (+0.0007)
-       - House 5: **0.6063** vs 0.5978 (+0.0085)
-       - House 6: **0.6650** vs 0.6271 (+0.0379)
-   - Across **all four benchmark appliances**, the retrained combined architecture surpasses the v3 baseline:
-     - Microwave: **0.5250** vs 0.3986 (+0.1264, +31.7% relative gain)
-     - Dishwasher: **0.4787** vs 0.3625 (+0.1162, +32.1% relative gain)
-     - Washing Machine: **0.3096** vs 0.2334 (+0.0762, +32.7% relative gain)
+> [!IMPORTANT]
+> **Audit Reconciliation Notice (2026-09-19)**: The relative gains originally reported for Microwave (+31.71%) and Washing Machine (+32.65%) compared evaluable-house Protocol B means against unrestricted 6-fold v3 baselines (0.3986 and 0.2334) that included zero-signal houses. Under strictly **same-house comparisons** (Microwave H1-3 = 0.5315; Washing Machine H1,3,4 = 0.3112), Protocol B achieves near parity (-1.22% and -0.51%) and is marked **`NOT_VALIDATED`** in `app/server.py`. **Refrigerator (+6.56%) and Dishwasher (+32.05%) remain fully verified (`VERIFIED_GAIN`).**
+
+---
+
+3. **Multi-Appliance Benchmark Performance**:
+    - **Refrigerator**:
+      - **Retrained Combined Architecture**: **0.5005** (95.86% of Oracle Ceiling 0.5221)
+      - **v3 Baseline (BatchNorm, 24h calibration)**: **0.4697**
+      - **Phase 7 Report Claim (Isolated run)**: **0.4810**
+      - **Verdict**: **The retrained combined architecture BEATS the v3 baseline (+0.0308, +6.56% relative gain) AND BEATS the Phase 7 claim (+0.0195).**
+      - Every single evaluable fold beats or matches its v3 counterpart:
+        - House 1: **0.4703** vs 0.4365 (+0.0338)
+        - House 2: **0.6891** vs 0.6159 (+0.0732)
+        - House 3: **0.0717** vs 0.0710 (+0.0007)
+        - House 5: **0.6063** vs 0.5978 (+0.0085)
+        - House 6: **0.6650** vs 0.6271 (+0.0379)
+    - Across **all four benchmark appliances**, performance under Protocol B is:
+      - Refrigerator: **0.5005** vs 0.4697 (+0.0308, +6.56% relative gain, **`VERIFIED_GAIN`**)
+      - Dishwasher: **0.4787** vs 0.3625 (+0.1162, +32.1% relative gain, **`VERIFIED_GAIN`**)
+      - Microwave: **0.5250** vs same-house baseline 0.5315 (-0.0065, -1.2% relative gain, **`NOT_VALIDATED`**; original +31.7% was against old 6-fold 0.3986)
+      - Washing Machine: **0.3096** vs same-house baseline 0.3112 (-0.0016, -0.5% relative gain, **`NOT_VALIDATED`**; original +32.7% was against old 6-fold 0.2334)
 
 4. **Section 4 Audit Loose Ends Closed**:
    - **Ranking Correction**: The top two scoring folds in the v3 baseline were **House 6 (0.6271) and House 2 (0.6159)**, followed by House 5 (0.5978). The previous audit misstated House 5 as outranking House 2.
@@ -245,12 +253,12 @@ Evaluated strictly on held-out post-24h evaluation suffix `[24h:end]`:
 ```text
 --- Protocol B: Commissioning James-Stein Shrinkage Calibration (All 4 Appliances) ---
 Evaluated strictly on held-out post-24h evaluation suffix [24h:end]
-Appliance        | Shrinkage F1   Oracle F1      % of Ceiling   | v3 Plain Baseline  Improvement   
+Appliance        | Shrinkage F1   Oracle F1      % of Ceiling   | v3 Same-House Base Improvement   
 ------------------------------------------------------------------------------------------
-fridge           |         0.5005         0.5221         95.86% |             0.4697 +0.0308 ++
-microwave        |         0.5250         0.5983         87.75% |             0.3986 +0.1264 ++
-dishwasher       |         0.4787         0.4919         97.30% |             0.3625 +0.1162 ++
-washing_machine  |         0.3096         0.3443         89.92% |             0.2334 +0.0762 ++
+fridge           |         0.5005         0.5221         95.86% |             0.4697 +0.0308 (VERIFIED_GAIN)
+microwave        |         0.5250         0.5983         87.75% |             0.5315 -0.0065 (FLAG: NOT_VALIDATED)
+dishwasher       |         0.4787         0.4919         97.30% |             0.3625 +0.1162 (VERIFIED_GAIN)
+washing_machine  |         0.3096         0.3443         89.92% |             0.3112 -0.0016 (FLAG: NOT_VALIDATED)
 ==========================================================================================
 ```
 
@@ -276,12 +284,12 @@ washing_machine  |         0.3096         0.3443         89.92% |             0.
 | **Mean** | **5 Active Folds** | **0.4697** | **0.5005** | **+0.0308** | **All 5 Folds Beat/Match** |
 
 ### 4.3 Full Multi-Appliance Comparison vs v3 Baseline
-| Target Appliance | v3 Baseline (24h calib) | Combined Architecture (Shrinkage) | Absolute Gain ($\Delta$) | Relative Gain (%) | Verdict |
+| Target Appliance | Same-House v3 Baseline | Combined Architecture (Shrinkage) | Absolute Gain ($\Delta$) | Relative Gain (%) | Verdict / Production Status |
 |---|---|---|---|---|---|
-| **Refrigerator** | 0.4697 | **0.5005** | **+0.0308** | **+6.56%** | **Beats Baseline & Phase 7** |
-| **Microwave** | 0.3986 | **0.5250** | **+0.1264** | **+31.71%** | **Strong Compound Gain** |
-| **Dishwasher** | 0.3625 | **0.4787** | **+0.1162** | **+32.05%** | **Strong Compound Gain** |
-| **Washing Machine** | 0.2334 | **0.3096** | **+0.0762** | **+32.65%** | **Strong Compound Gain** |
+| **Refrigerator** | 0.4697 (24h calib) | **0.5005** | **+0.0308** | **+6.56%** | **`VERIFIED_GAIN` (Beats Baseline & Phase 7)** |
+| **Dishwasher** | 0.3625 (24h calib) | **0.4787** | **+0.1162** | **+32.05%** | **`VERIFIED_GAIN` (Strong Compound Gain)** |
+| **Microwave** | 0.5315 (Houses 1, 2, 3) | **0.5250** | **-0.0065** | **-1.22%** | **`NOT_VALIDATED` (Near parity; old 0.3986 baseline had 0-signal folds)** |
+| **Washing Machine** | 0.3112 (Houses 1, 3, 4) | **0.3096** | **-0.0016** | **-0.51%** | **`NOT_VALIDATED` (Near parity; old 0.2334 baseline had 0-signal folds)** |
 
 ---
 

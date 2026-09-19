@@ -467,14 +467,14 @@ def main():
 
     print("\n--- Protocol B: Commissioning James-Stein Shrinkage Calibration (All 4 Appliances) ---")
     print("Evaluated strictly on held-out post-24h evaluation suffix [24h:end]")
-    print(f"{'Appliance':16s} | {'Shrinkage F1':14s} {'Oracle F1':14s} {'% of Ceiling':14s} | {'v3 Plain Baseline':18s} {'Improvement':14s}")
+    print(f"{'Appliance':16s} | {'Shrinkage F1':14s} {'Oracle F1':14s} {'% of Ceiling':14s} | {'v3 Same-House Base':18s} {'Improvement':14s}")
     print("-" * 90)
 
     v3_baselines = {
-        "fridge": 0.4697,
-        "microwave": 0.3986,
-        "dishwasher": 0.3625,
-        "washing_machine": 0.2334,
+        "fridge": 0.4697,  # 24h calibrated baseline across evaluable houses [1, 2, 3, 5, 6]
+        "microwave": 0.5315,  # Same-house v3 baseline across evaluable houses [1, 2, 3]
+        "dishwasher": 0.3625,  # 24h calibrated baseline across evaluable houses [1, 2, 3, 4]
+        "washing_machine": 0.3112,  # Same-house v3 baseline across evaluable houses [1, 3, 4]
     }
 
     for app in DEFAULT_APPLIANCES:
@@ -497,7 +497,7 @@ def main():
         diff = mean_sh - v3_b
 
         diff_str = f"{diff:+.4f}" if not np.isnan(diff) else "N/A"
-        flag_str = " (FLAG)" if diff < 0 else " ++"
+        flag_str = " (FLAG: NOT_VALIDATED)" if diff < 0 else " (VERIFIED_GAIN)"
         print(f"{app:16s} | {mean_sh:14.4f} {mean_orc:14.4f} {pct_ceil:13.2f}% | {v3_b:18.4f} {diff_str + flag_str}")
     print("=" * 90)
 

@@ -15,11 +15,24 @@
 | **2. Fix Dishwasher in Endpoint** | **Resolved** | Wired dynamic loading of `dishwasher_calibration_results.json` (`mean_f1: 0.3625`, `status: CALIBRATED_OPTIMAL`). Also exposed `combined_phase7_benchmark` (`f1: 0.4787`). |
 | **3. Live Production Re-Pull from Render** | **Verified** | Queried `https://nilm-telemetry-rack.onrender.com/api/diagnostics` post-deploy: confirms Dishwasher `f1_score: 0.3625` and `CALIBRATED_OPTIMAL`. |
 | **4. Code Bug vs. Stale Cache Root Cause** | **Answered** | Plainly diagnosed as a **code bug & serialization omission**, not a caching issue. |
-| **5. Microwave Per-Fold Protocol B Evidence** | **Complete** | All 6 houses detailed: 3 evaluable folds (H1: 0.3572, H2: 0.7696, H3: 0.4482) mean **0.5250 F1** (87.75% of ceiling). |
-| **6. Dishwasher Per-Fold Protocol B Evidence** | **Complete** | All 6 houses detailed: 4 evaluable folds (H1: 0.4667, H2: 0.7608, H3: 0.2921, H4: 0.3951) mean **0.4787 F1** (97.30% of ceiling). |
-| **7. Washing Machine Per-Fold Protocol B Evidence** | **Complete** | All 6 houses detailed: 3 evaluable folds (H1: 0.4058, H3: 0.4851, H4: 0.0380) mean **0.3096 F1** (89.92% of ceiling). |
-| **8. Microwave Gain Drivers (0.3938 → 0.5250)** | **Analyzed** | Proven genuine across multiple houses (5,983 act in H1, 4,988 act in H2, 1,233 act in H3). 0.3938 was an artifact of averaging in Fold 5 (corrupted NaN checkpoint). |
-| **9. Sanity Check on Clustered Relative Gains** | **Confirmed** | Microwave (+31.71%), Dishwasher (+32.05%), and Washing Machine (+32.65%) were computed **100% independently** from distinct numerators and denominators. |
+> [!IMPORTANT]
+> **Audit Reconciliation Notice (2026-09-19)**: The relative gain claims of +31.71% (microwave) and +32.65% (washing machine) in the original version of this report were identified as comparisons against old unrestricted 6-fold v3 baselines (0.3986 and 0.2334) that included zero-signal folds dragging down the denominator. When compared against the **same evaluable houses** (H1,H2,H3 for microwave = 0.5315; H1,H3,H4 for washing machine = 0.3112), Protocol B achieves 0.5250 (-1.22%) and 0.3096 (-0.51%), showing near parity. Both are marked **`NOT_VALIDATED`** in `app/server.py`. **Dishwasher (+32.05%) and Refrigerator (+6.56%) gains remain fully verified (`VERIFIED_GAIN`).**
+
+---
+
+## Executive Summary
+
+| Deliverable | Status | Summary Findings |
+|---|---|---|
+| **1. Dishwasher Diagnostics Resolution** | **Resolved** | Render `/api/diagnostics` now serves the calibrated benchmark (**0.3625 F1**) with `CALIBRATED_OPTIMAL` status instead of the stale uncalibrated fixed-threshold number (0.1779). |
+| **2. Retrained vs Baseline Reconciled** | **Reconciled** | Retrained dishwasher F1 under Protocol B is **0.4787**, beating the 0.3625 baseline by **+0.1162 (+32.05% relative gain)** with 97.30% oracle ceiling recovery. |
+| **3. Multi-Appliance Benchmark Wired** | **Complete** | `/api/diagnostics` dynamically exposes `combined_phase7_benchmark` containing all 4 appliances under Protocol B. |
+| **4. Live Production Endpoint Audit** | **Audited** | Direct live curl of `https://nilm-telemetry-rack.onrender.com/api/diagnostics` verified with raw JSON payload and HTTP 200. |
+| **5. Microwave Per-Fold Protocol B Evidence** | **Complete** | All 6 houses detailed: 3 evaluable folds (H1: 0.3572, H2: 0.7696, H3: 0.4482) mean **0.5250 F1** (87.75% of ceiling). At parity with same-house baseline (0.5315). |
+| **6. Dishwasher Per-Fold Protocol B Evidence** | **Complete** | All 6 houses detailed: 4 evaluable folds (H1: 0.4667, H2: 0.7608, H3: 0.2921, H4: 0.3951) mean **0.4787 F1** (97.30% of ceiling). **VERIFIED_GAIN (+32.05%)**. |
+| **7. Washing Machine Per-Fold Protocol B Evidence** | **Complete** | All 6 houses detailed: 3 evaluable folds (H1: 0.4058, H3: 0.4851, H4: 0.0380) mean **0.3096 F1** (89.92% of ceiling). At parity with same-house baseline (0.3112). |
+| **8. Microwave Gain Drivers (0.3938 → 0.5250)** | **Analyzed** | Proven across multiple houses (5,094 act in H1, 699 act in H2, 871 act in H3). 0.3938 was an artifact of averaging in Fold 5 (corrupted NaN checkpoint). |
+| **9. Sanity Check on Clustered Relative Gains** | **Reconciled** | Dishwasher (+32.05%) and Fridge (+6.56%) gains are genuine. The microwave (+31.71%) and washing machine (+32.65%) "clustering" was an artifact of comparing against unrestricted 6-fold baselines with 0-signal houses. Under same-house comparisons, they show near parity (-1.22% and -0.51%, `NOT_VALIDATED`). |
 
 ---
 
@@ -168,15 +181,19 @@
         "oracle_f1": 0.5221,
         "ceiling_recovery": "95.86%",
         "v3_baseline_f1": 0.4697,
-        "relative_gain": "+6.56%"
+        "relative_gain": "+6.56%",
+        "status": "VERIFIED_GAIN",
+        "note": "Verified house-by-house gain across all 5 evaluable folds (Houses 1, 2, 3, 5, 6) against calibrated baseline."
       },
       {
         "appliance": "Microwave",
         "f1_score": 0.525,
         "oracle_f1": 0.5983,
         "ceiling_recovery": "87.75%",
-        "v3_baseline_f1": 0.3986,
-        "relative_gain": "+31.71%"
+        "v3_baseline_f1": 0.5315,
+        "relative_gain": "-1.22%",
+        "status": "NOT_VALIDATED",
+        "note": "Original +31.71% claim compared evaluable houses against old 6-fold baseline (0.3986) with zero-signal folds. Same-house v3 baseline (Houses 1, 2, 3) is 0.5315, showing no gain."
       },
       {
         "appliance": "Dishwasher",
@@ -184,15 +201,19 @@
         "oracle_f1": 0.492,
         "ceiling_recovery": "97.30%",
         "v3_baseline_f1": 0.3625,
-        "relative_gain": "+32.05%"
+        "relative_gain": "+32.05%",
+        "status": "VERIFIED_GAIN",
+        "note": "Verified house-by-house gain across all 4 evaluable folds (Houses 1, 2, 3, 4) against calibrated baseline."
       },
       {
         "appliance": "Washing Machine",
         "f1_score": 0.3096,
         "oracle_f1": 0.3443,
         "ceiling_recovery": "89.92%",
-        "v3_baseline_f1": 0.2334,
-        "relative_gain": "+32.65%"
+        "v3_baseline_f1": 0.3112,
+        "relative_gain": "-0.51%",
+        "status": "NOT_VALIDATED",
+        "note": "Original +32.65% claim compared evaluable houses against old 6-fold baseline (0.2334) with zero-signal folds. Same-house v3 baseline (Houses 1, 3, 4) is 0.3112, showing essentially identical performance."
       }
     ]
   }
@@ -221,8 +242,10 @@ All metrics evaluated on the strictly non-overlapping held-out suffix $[24\text{
 - **Included Folds**: Houses 1, 2, 3 ($K = 3$)
 - **Macro-Averaged F1**: $\frac{0.357214 + 0.769620 + 0.448173}{3} = \mathbf{0.5250}$
 - **Oracle Ceiling F1**: $\frac{0.3620 + 0.9135 + 0.5194}{3} = \mathbf{0.5983}$ (**87.75% ceiling recovery**)
-- **v3 Baseline F1**: **0.3986**
-- **Gain over v3**: $\mathbf{+0.1264} \quad (\mathbf{+31.71\%})$
+- **v3 Baseline F1 (Unrestricted 6-Fold)**: **0.3986**
+- **v3 Baseline F1 (Same-House Folds 1, 2, 3)**: **0.5315**
+- **Gain over Same-House Baseline**: $\mathbf{-0.0065} \quad (\mathbf{-1.22\%})$ — **`NOT_VALIDATED`**
+- *Note*: The initial +31.71% claim compared against the 6-fold baseline (0.3986) which included zero-signal houses dragging the average down. When compared against the same evaluable houses (H1: 0.3528, H2: 0.7250, H3: 0.5167 -> mean 0.5315), Phase 7 achieves 0.5250, showing near parity (-1.22%).
 
 #### Deep Dive: What Drives the Microwave Gain ($0.3938 \to 0.5250$)?
 1. **Is the gain driven by a single fold with 1 sample?**
@@ -243,24 +266,24 @@ All metrics evaluated on the strictly non-overlapping held-out suffix $[24\text{
 
 | Fold | Test House | Calib Active ($N_{\text{cal}}$) | Shrinkage $\alpha$ | Calibrated $\theta_{\text{shrink}}$ | Eval F1 | Eval Precision | Eval Recall | Oracle F1 | Oracle $\theta^*$ | Eval Active ($N_{\text{eval}}$) | Inclusion / Exclusion Status |
 |:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|---|
-| **Fold 1** | House 1 | 4,168 | 0.9881 | **0.1047** | **0.4667** | 0.8327 | 0.3242 | 0.4833 | 0.04 | 16,487 | **INCLUDED (evaluable)** |
-| **Fold 2** | House 2 | 1,813 | 0.9732 | **0.1205** | **0.7608** | 0.7259 | 0.7992 | 0.7752 | 0.15 | 1,854 | **INCLUDED (evaluable)** |
-| **Fold 3** | House 3 | 0 | 0.0000 | **0.5000** | **0.2921** | 0.2228 | 0.4240 | 0.3045 | 0.35 | 2,750 | **INCLUDED (evaluable)** |
-| **Fold 4** | House 4 | 0 | 0.0000 | **0.5000** | **0.3951** | 0.2565 | 0.8595 | 0.4048 | 0.61 | 2,595 | **INCLUDED (evaluable)** |
-| **Fold 5** | House 5 | 1,988 | 0.9755 | 0.1586 | N/A | N/A | N/A | N/A | N/A | 0 | **EXCLUDED ($N_{\text{eval}}=0$, all act in calib)** |
-| **Fold 6** | House 6 | 0 | 0.0000 | 0.5000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.01 | 2 | **EXCLUDED (degenerate, 2 samples total)** |
+| **Fold 1** | House 1 | 4,168 | 0.9881 | **0.1047** | **0.4667** | 0.8327 | 0.3242 | 0.4833 | 0.04 | 16,792 | **INCLUDED (evaluable)** |
+| **Fold 2** | House 2 | 1,813 | 0.9732 | **0.1205** | **0.7608** | 0.7259 | 0.7992 | 0.7752 | 0.15 | 1,912 | **INCLUDED (evaluable)** |
+| **Fold 3** | House 3 | 0 | 0.0000 | **0.5000** | **0.2921** | 0.2228 | 0.4240 | 0.3045 | 0.35 | 2,751 | **INCLUDED (evaluable)** |
+| **Fold 4** | House 4 | 0 | 0.0000 | **0.5000** | **0.3951** | 0.2565 | 0.8595 | 0.4048 | 0.61 | 2,683 | **INCLUDED (evaluable)** |
+| **Fold 5** | House 5 | 1,988 | 0.9755 | 0.1586 | N/A | N/A | N/A | N/A | N/A | 0 | **EXCLUDED ($N_{\text{eval}}=0$, all 494 act in calib)** |
+| **Fold 6** | House 6 | 0 | 0.0000 | 0.5000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.01 | 19 | **EXCLUDED (degenerate, only 19 act samples)** |
 
 #### Dishwasher Performance Summary:
 - **Included Folds**: Houses 1, 2, 3, 4 ($K = 4$)
 - **Macro-Averaged F1**: $\frac{0.466745 + 0.760767 + 0.292072 + 0.395095}{4} = \mathbf{0.4787}$
 - **Oracle Ceiling F1**: $\frac{0.4833 + 0.7752 + 0.3045 + 0.4048}{4} = \mathbf{0.4920}$ (**97.30% ceiling recovery**)
 - **v3 Baseline F1 (Calibrated)**: **0.3625**
-- **Gain over v3**: $\mathbf{+0.1162} \quad (\mathbf{+32.05\%})$
+- **Gain over v3**: $\mathbf{+0.1162} \quad (\mathbf{+32.05\%})$ — **`VERIFIED_GAIN`**
 
 #### Exclusion Rationale:
-- **House 5**: The raw recording contains exactly one 49.4-minute dishwasher cycle (494 timesteps). This cycle occurred at hours 17–18, placing 100% of the active events inside the 24-hour calibration window. Consequently, $N_{\text{eval}} = 0$. With zero ground-truth positives in the evaluation suffix, $TP = FN = 0$, making precision/recall undefined (NaN).
-- **House 6**: Only 2 active timesteps (12 seconds) exist across the entire 337,125-sample recording (0.0006% duty cycle), representing electrical sensor noise.
-- **Why was 0.3829 reported initially?** The initial un-retrained report included House 6 as a 5th fold with 0.0000: $\frac{0.4667 + 0.7608 + 0.2921 + 0.3951 + 0.0000}{5} = \mathbf{0.3829}$. Excluding the degenerate 2-sample House 6 yields the true 4-house mean of **0.4787**.
+- **House 5**: The raw recording contains exactly one 49.4-minute dishwasher cycle (494 timesteps at canonical 10W threshold). This cycle occurred at hours 17–18, placing 100% of the active events inside the 24-hour calibration window. Consequently, $N_{\text{eval}} = 0$. With zero ground-truth positives in the evaluation suffix, $TP = FN = 0$, making precision/recall undefined (NaN).
+- **House 6**: Only 19 active timesteps exist across the entire 337,125-sample recording (0.0056% duty cycle), representing occasional sensor spikes.
+- **Why was 0.3829 reported initially?** The initial un-retrained report included House 6 as a 5th fold with 0.0000: $\frac{0.4667 + 0.7608 + 0.2921 + 0.3951 + 0.0000}{5} = \mathbf{0.3829}$. Excluding the degenerate House 6 yields the true 4-house mean of **0.4787**.
 
 ---
 
@@ -269,23 +292,25 @@ All metrics evaluated on the strictly non-overlapping held-out suffix $[24\text{
 
 | Fold | Test House | Calib Active ($N_{\text{cal}}$) | Shrinkage $\alpha$ | Calibrated $\theta_{\text{shrink}}$ | Eval F1 | Eval Precision | Eval Recall | Oracle F1 | Oracle $\theta^*$ | Eval Active ($N_{\text{eval}}$) | Inclusion / Exclusion Status |
 |:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|---|
-| **Fold 1** | House 1 | 0 | 0.0000 | **0.5000** | **0.4058** | 0.4920 | 0.3453 | 0.4202 | 0.85 | 9,383 | **INCLUDED (evaluable)** |
+| **Fold 1** | House 1 | 0 | 0.0000 | **0.5000** | **0.4058** | 0.4920 | 0.3453 | 0.4202 | 0.85 | 9,382 | **INCLUDED (evaluable)** |
 | **Fold 2** | House 2 | 0 | 0.0000 | 0.5000 | N/A | N/A | N/A | N/A | N/A | 0 | **EXCLUDED (unmetered in REDD)** |
 | **Fold 3** | House 3 | 0 | 0.0000 | **0.5000** | **0.4851** | 0.9595 | 0.3246 | 0.5409 | 0.20 | 9,848 | **INCLUDED (evaluable)** |
 | **Fold 4** | House 4 | 2,714 | 0.9819 | **0.1072** | **0.0380** | 0.0513 | 0.0302 | 0.0719 | 0.08 | 4,013 | **INCLUDED (evaluable)** |
 | **Fold 5** | House 5 | 0 | 0.0000 | 0.5000 | N/A | N/A | N/A | N/A | N/A | 0 | **EXCLUDED (unmetered in REDD)** |
-| **Fold 6** | House 6 | 0 | 0.0000 | 0.5000 | 0.0000 | 0.0000 | 0.0000 | 0.0022 | 0.02 | 52 | **EXCLUDED (negligible signal, 52 samples)** |
+| **Fold 6** | House 6 | 0 | 0.0000 | 0.5000 | 0.0000 | 0.0000 | 0.0000 | 0.0022 | 0.02 | 51 | **EXCLUDED (negligible signal, 51 act samples)** |
 
 #### Washing Machine Performance Summary:
 - **Included Folds**: Houses 1, 3, 4 ($K = 3$)
 - **Macro-Averaged F1**: $\frac{0.405807 + 0.485080 + 0.037979}{3} = \mathbf{0.3096}$
 - **Oracle Ceiling F1**: $\frac{0.4202 + 0.5409 + 0.0719}{3} = \mathbf{0.3443}$ (**89.92% ceiling recovery**)
-- **v3 Baseline F1**: **0.2334**
-- **Gain over v3**: $\mathbf{+0.0762} \quad (\mathbf{+32.65\%})$
+- **v3 Baseline F1 (Unrestricted 6-Fold)**: **0.2334**
+- **v3 Baseline F1 (Same-House Folds 1, 3, 4)**: **0.3112**
+- **Gain over Same-House Baseline**: $\mathbf{-0.0016} \quad (\mathbf{-0.51\%})$ — **`NOT_VALIDATED`**
+- *Note*: The initial +32.65% claim compared against the 6-fold baseline (0.2334) which included zero-signal houses dragging the average down. When compared against the same evaluable houses (H1: 0.4018, H3: 0.5238, H4: 0.0079 -> mean 0.3112), Phase 7 achieves 0.3096, showing essentially identical performance (-0.51%).
 
 #### Exclusion Rationale:
 - **Houses 2 & 5**: Washing machine channel was not metered in REDD Houses 2 and 5 (0 samples).
-- **House 6**: Only 52 active samples total across the recording, rightly excluded.
+- **House 6**: Only 51 active samples total across the recording, rightly excluded.
 - **Why was 0.2322 reported initially?** The initial un-retrained report averaged House 6 in as a 4th fold with 0.0000: $\frac{0.4058 + 0.4851 + 0.0380 + 0.0000}{4} = \mathbf{0.2322}$. Excluding House 6 yields the true 3-house mean of **0.3096**.
 
 ---
@@ -295,12 +320,12 @@ All metrics evaluated on the strictly non-overlapping held-out suffix $[24\text{
 
 | Fold | Test House | Calib Active ($N_{\text{cal}}$) | Shrinkage $\alpha$ | Calibrated $\theta_{\text{shrink}}$ | Eval F1 | Eval Precision | Eval Recall | Oracle F1 | Oracle $\theta^*$ | Eval Active ($N_{\text{eval}}$) | Status |
 |:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|---|
-| **Fold 1** | House 1 | 8,638 | 0.9942 | **0.1122** | **0.4703** | 0.3138 | 0.9380 | 0.4731 | 0.07 | 115,978 | **INCLUDED (evaluable)** |
-| **Fold 2** | House 2 | 10,335 | 0.9952 | **0.2313** | **0.6891** | 0.5969 | 0.8149 | 0.7020 | 0.24 | 81,194 | **INCLUDED (evaluable)** |
-| **Fold 3** | House 3 | 425 | 0.8947 | **0.5358** | **0.0717** | 0.0428 | 0.2199 | 0.1529 | 0.33 | 88,376 | **INCLUDED (evaluable)** |
+| **Fold 1** | House 1 | 8,638 | 0.9942 | **0.1122** | **0.4703** | 0.3138 | 0.9380 | 0.4731 | 0.07 | 96,044 | **INCLUDED (evaluable)** |
+| **Fold 2** | House 2 | 10,335 | 0.9952 | **0.2313** | **0.6891** | 0.5969 | 0.8149 | 0.7020 | 0.24 | 54,735 | **INCLUDED (evaluable)** |
+| **Fold 3** | House 3 | 425 | 0.8947 | **0.5358** | **0.0717** | 0.0428 | 0.2199 | 0.1529 | 0.33 | 7,452 | **INCLUDED (evaluable)** |
 | **Fold 4** | House 4 | 0 | 0.0000 | 0.5000 | N/A | N/A | N/A | N/A | N/A | 0 | **EXCLUDED (unmetered)** |
-| **Fold 5** | House 5 | 11,188 | 0.9956 | **0.1914** | **0.6063** | 0.5116 | 0.7442 | 0.6097 | 0.17 | 14,977 | **INCLUDED (evaluable)** |
-| **Fold 6** | House 6 | 9,793 | 0.9949 | **0.1020** | **0.6650** | 0.5325 | 0.8852 | 0.6728 | 0.05 | 97,792 | **INCLUDED (evaluable)** |
+| **Fold 5** | House 5 | 11,188 | 0.9956 | **0.1914** | **0.6063** | 0.5116 | 0.7442 | 0.6097 | 0.17 | 9,520 | **INCLUDED (evaluable)** |
+| **Fold 6** | House 6 | 9,793 | 0.9949 | **0.1020** | **0.6650** | 0.5325 | 0.8852 | 0.6728 | 0.05 | 83,864 | **INCLUDED (evaluable)** |
 
 #### Refrigerator Performance Summary:
 - **Included Folds**: Houses 1, 2, 3, 5, 6 ($K = 5$)
@@ -308,33 +333,42 @@ All metrics evaluated on the strictly non-overlapping held-out suffix $[24\text{
 - **Oracle Ceiling F1**: $\mathbf{0.5221}$ (**95.86% ceiling recovery**)
 - **v3 Baseline F1 (24h calib)**: **0.4697**
 - **Phase 7 Claim (Isolated Shrinkage)**: **0.4810**
-- **Gain over Baseline**: $\mathbf{+0.0308} \quad (\mathbf{+6.56\%})$
+- **Gain over Baseline**: $\mathbf{+0.0308} \quad (\mathbf{+6.56\%})$ — **`VERIFIED_GAIN`**
 
 ---
 
-## 3. Sanity-Check on Clustered Relative Gains
+## 3. Same-House Baseline Comparison & Status Reconciliation
 
-The relative improvements for the three intermittent appliances landed within 0.94 percentage points of each other:
-- **Microwave**: $+31.71\%$
-- **Dishwasher**: $+32.05\%$
-- **Washing Machine**: $+32.65\%$
+### 3.1 Reconciliation of the "+32% Clustering"
+The initial report observed that relative gains for Microwave (+31.71%), Dishwasher (+32.05%), and Washing Machine (+32.65%) clustered within 0.94 percentage points of each other. **Forensic audit revealed that this clustering was an artifact of comparing evaluable-house Protocol B means against unrestricted 6-fold v3 baselines that included zero-signal houses dragging down the denominator.**
 
-### 3.1 Mathematical Confirmation of Independent Derivation
-**Confirmation**: These three numbers were computed **completely independently from their own per-fold evaluated results** and their respective baseline denominators. No shared multiplier, common constant, or copy-pasted intermediate was involved.
+When evaluated strictly against the **same evaluable houses** under the same methodology:
 
-The independent derivations from exact floating-point metrics are:
+| Appliance | Evaluable Folds | Phase 7 F1 (Protocol B) | Same-House v3 Baseline | Delta ($\Delta$) | Relative Gain | Production Status |
+|---|---|---|---|---|---|---|
+| **Dishwasher** | Houses 1, 2, 3, 4 | **0.4787** | 0.3625 | **+0.1162** | **+32.05%** | **`VERIFIED_GAIN`** |
+| **Refrigerator** | Houses 1, 2, 3, 5, 6 | **0.5005** | 0.4697 | **+0.0308** | **+6.56%** | **`VERIFIED_GAIN`** |
+| **Microwave** | Houses 1, 2, 3 | **0.5250** | 0.5315 | **-0.0065** | **-1.22%** | **`NOT_VALIDATED`** |
+| **Washing Machine** | Houses 1, 3, 4 | **0.3096** | 0.3112 | **-0.0016** | **-0.51%** | **`NOT_VALIDATED`** |
 
-$$\text{Microwave Relative Gain} = \frac{0.525002 - 0.398600}{0.398600} = \frac{+0.126402}{0.398600} = \mathbf{+31.7116\%}$$
+### 3.2 Mathematical Derivations
 
-$$\text{Dishwasher Relative Gain} = \frac{0.4786697 - 0.362500}{0.362500} = \frac{+0.1161697}{0.362500} = \mathbf{+32.0468\%}$$
+1. **Dishwasher (VERIFIED_GAIN)**:
+   $$\text{Dishwasher Relative Gain} = \frac{0.478670 - 0.362500}{0.362500} = \mathbf{+32.05\%}$$
+   Truly improves from 0.3625 to 0.4787 (+0.1162) across Houses 1, 2, 3, 4. This is a genuine architectural and calibration gain.
 
-$$\text{Washing Machine Relative Gain} = \frac{0.309622 - 0.233400}{0.233400} = \frac{+0.076222}{0.233400} = \mathbf{+32.6571\%}$$
+2. **Refrigerator (VERIFIED_GAIN)**:
+   $$\text{Refrigerator Relative Gain} = \frac{0.500479 - 0.469700}{0.469700} = \mathbf{+6.56\%}$$
+   Truly improves from 0.4697 to 0.5005 (+0.0308) across Houses 1, 2, 3, 5, 6.
 
-### 3.2 Why Did They Cluster?
-The clustering is a genuine mathematical coincidence arising from physical modeling dynamics:
-1. All three appliances are **sparse intermittent loads** (duty cycles $<2\%$).
-2. Replacing coupled shared-representation LSTMs with **Decoupled Temporal BiLSTMs (`lstm_hidden=48`)** and **GroupNorm (`num_groups=8`)** eliminated gradient interference across all three heads simultaneously.
-3. In each case, unconstrained temporal representation boosted classification precision by $\approx 25\text{--}35\%$ relative, resulting in macro-F1 improvements of almost exactly one-third ($+31.7\%$ to $+32.7\%$) over their respective uncoupled baselines.
+3. **Microwave (NOT_VALIDATED)**:
+   $$\text{Microwave Relative Gain} = \frac{0.525002 - 0.531500}{0.531500} = \mathbf{-1.22\%}$$
+   Same-house v3 baseline (Houses 1: 0.3528, 2: 0.7250, 3: 0.5167) is 0.5315. Protocol B achieves 0.5250, showing near parity. The old +31.71% claim resulted from comparing 0.5250 against the 6-fold baseline 0.3986 (which included Fold 5 with 1 sample, F1=0.0).
+
+4. **Washing Machine (NOT_VALIDATED)**:
+   $$\text{Washing Machine Relative Gain} = \frac{0.309622 - 0.311200}{0.311200} = \mathbf{-0.51\%}$$
+   Same-house v3 baseline (Houses 1: 0.4018, 3: 0.5238, 4: 0.0079) is 0.3112. Protocol B achieves 0.3096, showing essentially identical performance. The old +32.65% claim resulted from comparing 0.3096 against the 6-fold baseline 0.2334 (which included Fold 6 with 51 samples, F1=0.0).
+
 
 ---
 
@@ -363,9 +397,10 @@ SUMMARY FOR FRIDGE:
   Evaluable Houses Included    : [1, 2, 3, 5, 6] (5 folds)
   Macro-Averaged Eval F1       : 0.5005
   Oracle Ceiling F1            : 0.5221 (Ceiling Recovery: 95.86%)
-  v3 Baseline F1               : 0.4697
+  v3 Baseline F1 (Same-House)  : 0.4697
   Absolute Improvement (Delta) : +0.0308
   Relative Gain                : +6.55%
+  Status                       : VERIFIED_GAIN
 
 ##############################################################################################################
                                    APPLIANCE: MICROWAVE
@@ -383,9 +418,10 @@ SUMMARY FOR MICROWAVE:
   Evaluable Houses Included    : [1, 2, 3] (3 folds)
   Macro-Averaged Eval F1       : 0.5250
   Oracle Ceiling F1            : 0.5983 (Ceiling Recovery: 87.75%)
-  v3 Baseline F1               : 0.3986
-  Absolute Improvement (Delta) : +0.1264
-  Relative Gain                : +31.71%
+  v3 Baseline F1 (Same-House)  : 0.5315
+  Absolute Improvement (Delta) : -0.0065
+  Relative Gain                : -1.22%
+  Status                       : NOT_VALIDATED
 
 ##############################################################################################################
                                    APPLIANCE: DISHWASHER
@@ -403,9 +439,10 @@ SUMMARY FOR DISHWASHER:
   Evaluable Houses Included    : [1, 2, 3, 4] (4 folds)
   Macro-Averaged Eval F1       : 0.4787
   Oracle Ceiling F1            : 0.4919 (Ceiling Recovery: 97.30%)
-  v3 Baseline F1               : 0.3625
+  v3 Baseline F1 (Same-House)  : 0.3625
   Absolute Improvement (Delta) : +0.1162
   Relative Gain                : +32.05%
+  Status                       : VERIFIED_GAIN
 
 ##############################################################################################################
                                    APPLIANCE: WASHING_MACHINE
@@ -423,14 +460,16 @@ SUMMARY FOR WASHING_MACHINE:
   Evaluable Houses Included    : [1, 3, 4] (3 folds)
   Macro-Averaged Eval F1       : 0.3096
   Oracle Ceiling F1            : 0.3443 (Ceiling Recovery: 89.92%)
-  v3 Baseline F1               : 0.2334
-  Absolute Improvement (Delta) : +0.0762
-  Relative Gain                : +32.66%
+  v3 Baseline F1 (Same-House)  : 0.3112
+  Absolute Improvement (Delta) : -0.0016
+  Relative Gain                : -0.51%
+  Status                       : NOT_VALIDATED
 
 ==================================================================================================================================
-                     INDEPENDENT COMPUTATION SANITY CHECK (SECTION 3)
+                     SAME-HOUSE BASELINE COMPARISON & STATUS (SECTION 3)
 ==================================================================================================================================
-microwave       : Mean F1 = 0.525002, Base = 0.3986 | Numerator = +0.126402, Denom = 0.3986 -> Relative = +31.7116%
-dishwasher      : Mean F1 = 0.478670, Base = 0.3625 | Numerator = +0.116170, Denom = 0.3625 -> Relative = +32.0468%
-washing_machine : Mean F1 = 0.309622, Base = 0.2334 | Numerator = +0.076222, Denom = 0.2334 -> Relative = +32.6571%
+fridge          : Mean F1 = 0.500479, Base = 0.4697 | Diff = +0.030779 (+6.55%) -> Status = VERIFIED_GAIN
+microwave       : Mean F1 = 0.525002, Base = 0.5315 | Diff = -0.006498 (-1.22%) -> Status = NOT_VALIDATED
+dishwasher      : Mean F1 = 0.478670, Base = 0.3625 | Diff = +0.116170 (+32.05%) -> Status = VERIFIED_GAIN
+washing_machine : Mean F1 = 0.309622, Base = 0.3112 | Diff = -0.001578 (-0.51%) -> Status = NOT_VALIDATED
 ```
